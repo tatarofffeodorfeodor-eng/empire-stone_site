@@ -159,3 +159,13 @@ input[type=range]{width:100%;accent-color:var(--acc)}
 #favd .rw .pl.g2{background:var(--card2);color:var(--ink);margin-left:6px}
 .prev{perspective:700px}
 .sl{transition:transform .12s ease-out;transform-style:preserve-3d;will-change:transform}
+
+/* подвал сайта */
+.sfoot{margin:30px -14px 0;padding:26px 14px 20px;background:var(--card);border-top:1px solid var(--line)}
+.sfoot-brand{display:flex;align-items:center;gap:8px;font:700 15px Unbounded,Manrope;margin-bottom:18px}
+.sfoot-brand img{width:26px;height:26px;border-radius:7px}
+.sfoot-cols{display:flex;flex-direction:column;gap:20px}
+.sfoot-col b{display:block;font:700 12px Manrope;color:var(--mute);text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px}
+.sfoot-col a,.sfoot-lnk{display:block;color:var(--ink);text-decoration:none;font:600 13.5px Manrope;padding:5px 0;background:none;border:0;text-align:left;cursor:pointer;width:100%}
+.sfoot-col span{display:block;color:var(--mute);font-size:12.5px;line-height:1.5;padding:5px 0}
+.sfoot-copy{margin-top:22px;padding-top:16px;border-top:1px solid var(--line);color:var(--mute);font-size:11.5px;text-align:center}

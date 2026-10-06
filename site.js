@@ -83,6 +83,14 @@ function cat_(){
     <p>${q?'Ничего не найдено по этому запросу.':'В этом разделе цена считается индивидуально — по размеру, материалу и объёму работ.'}</p>
     <button class="btn" id="openCallback">Оставить заявку на расчёт</button>
   </div>`}
+  <div class="box" style="margin-top:20px">
+    <div class="cab-sec" style="margin:0 0 8px">Остались вопросы?</div>
+    <div class="sub" style="margin-bottom:12px">Перезвоним в течение 10 минут и проведём бесплатную консультацию</div>
+    <input type="text" id="qName" placeholder="Ваше имя">
+    <input type="tel" id="qPhone" placeholder="Номер телефона" style="margin-top:8px">
+    <label class="chk"><input type="checkbox" id="qAgree"> Даю согласие на обработку моих персональных данных</label>
+    <button class="btn" id="qSend">Заказать расчёт</button>
+  </div>
   `;
 }
 
@@ -184,12 +192,38 @@ function cabView(){
   `;
 }
 
+/* ---------- подвал сайта (разделы + контакты) ---------- */
+function footerHtml(){
+  return `
+  <footer class="sfoot">
+    <div class="sfoot-brand"><img class="lg sm" src="${LOGO}" alt=""><span>Империя камня</span></div>
+    <div class="sfoot-cols">
+      <div class="sfoot-col">
+        <b>Каталог</b>
+        ${CATS.filter(c=>c!=='Все').map(c=>`<button class="sfoot-lnk" data-foot-cat="${c}">${c}</button>`).join('')}
+      </div>
+      <div class="sfoot-col">
+        <b>Контакты</b>
+        <a href="tel:+74752264040">+7 (4752) 26-40-40</a>
+        <a href="tel:+79012043565">+7 (901) 204-35-65</a>
+        <a href="https://wa.me/79012043565" target="_blank" rel="noopener">WhatsApp</a>
+        <a href="https://vk.com/club76623292" target="_blank" rel="noopener">ВКонтакте</a>
+      </div>
+      <div class="sfoot-col">
+        <b>Адреса</b>
+        <span>ул. Бастионная, 29<br>ежедневно 8:30–17:30</span>
+        <span>ул. Мичуринская, 275<br>ежедневно 9:00–18:00</span>
+      </div>
+    </div>
+    <div class="sfoot-copy">© ${new Date().getFullYear()} Империя камня · Тамбов</div>
+  </footer>`;
+}
 /* ---------- отрисовка ---------- */
 function render(){
   const tab=curTab();
   $$('.topnav button[data-go]').forEach(b=>b.classList.toggle('on',b.dataset.go===tab));
   const A=$('#app');
-  A.innerHTML = tab==='cat'?cat_() : tab==='works'?worksView() : tab==='calc'?calcView() : tab==='cart'?cartView() : cabView();
+  A.innerHTML = (tab==='cat'?cat_() : tab==='works'?worksView() : tab==='calc'?calcView() : tab==='cart'?cartView() : cabView()) + footerHtml();
   $('#cartDot').hidden = cart.length===0;
   $('#cartDot').textContent = cart.reduce((s,i)=>s+i.qty,0);
   renderTabs(tab);
@@ -216,6 +250,7 @@ function addCalcToCart(){
 
 function bindView(tab){
   $$('[data-go]').forEach(b=>b.onclick=()=>go(b.dataset.go));
+  $$('[data-foot-cat]').forEach(b=>b.onclick=()=>{curCat=b.dataset.footCat;q='';go('cat')});
   $$('[data-add]').forEach(b=>b.onclick=()=>addToCart(isNaN(+b.dataset.add)?b.dataset.add:+b.dataset.add));
   $$('[data-fav]').forEach(b=>b.onclick=()=>{const id=+b.dataset.fav;fav.has(id)?fav.delete(id):fav.set(id,true);saveAll();render()});
   $$('[data-o]').forEach(el=>el.onclick=()=>{li=+el.dataset.o;showLb()});
@@ -225,6 +260,16 @@ function bindView(tab){
     $('#sq').oninput=e=>{q=e.target.value;render();$('#sq').focus();$('#sq').setSelectionRange(q.length,q.length)};
     $$('[data-cat]').forEach(b=>b.onclick=()=>{curCat=b.dataset.cat;render()});
     if($('#openCallback'))$('#openCallback').onclick=openCallback;
+    if($('#qSend'))$('#qSend').onclick=()=>{
+      if(!$('#qAgree').checked){toast('Подтвердите согласие на обработку данных');return}
+      const phone=normPhone($('#qPhone').value);
+      if(phone.length<10){toast('Введите номер полностью');return}
+      const name=$('#qName').value.trim();
+      leads.push({id:uid(),date:new Date().toLocaleDateString('ru-RU'),phone,name});
+      saveAll();toast('Заявка отправлена — мы вам перезвоним!');
+      sendToTelegram({type:'callback',phone,name});
+      $('#qPhone').value='';$('#qName').value='';$('#qAgree').checked=false;
+    };
   }
   if(tab==='calc'){
     $$('[data-md]').forEach(b=>b.onclick=()=>{cs.md=b.dataset.md;render()});
