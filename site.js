@@ -69,6 +69,7 @@ function cat_(){
   <div class="promo"><b>Скидка 15%</b>на витринные образцы в наличии · принимаем заявки от организаций (тендеры) — звоните</div>
   <input type="text" placeholder="Поиск по каталогу…" id="sq" value="${q}" style="margin-bottom:12px">
   <div class="chips">${CATS.map(c=>`<button class="chip ${c===curCat?'on':''}" data-cat="${c}">${c}</button>`).join('')}</div>
+  ${curCat==='Все'&&!q?strip():''}
   ${list.length?`<div class="grid">${list.map(p=>`
     <div class="p">
       <div class="st" style="background:radial-gradient(90% 70% at 50% 100%,${M[p.m].v},${M[p.m].c})"><b>${CN[p.m]||''}</b></div>
