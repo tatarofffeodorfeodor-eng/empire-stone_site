@@ -44,7 +44,7 @@ function confetti(){
 }
 
 /* ---------- роутер ---------- */
-const TABS=['cat','works','calc','cart','cab'];
+const TABS=['cat','works','about','calc','cart','cab'];
 function go(tab){
   if(tab==='login'){location.hash='#login';renderLogin();return}
   if(tab==='admin'){location.hash='#admin';routeAdmin();return}
@@ -65,6 +65,14 @@ function favHtml(id){return `<button class="fvb ${fav.has(id)?'on':''}" data-fav
 function cat_(){
   const list=P.filter(p=>(curCat==='Все'||p.c===curCat)&&(!q||p.n.toLowerCase().includes(q.toLowerCase())));
   return `
+  <div class="brandhero">
+    <div class="crown">♛</div>
+    <h1>ИМПЕРИЯ КАМНЯ</h1>
+    <div class="goldbar"><span class="n"></span><span class="w"></span><span class="n"></span></div>
+    <div class="tag">Семейные традиции, проверенные временем</div>
+    <p class="sub2">Гранит и мрамор в Тамбове: памятники, лестницы, кухни, камины — и гарантия до 30 лет</p>
+    <button class="lnk" data-go="about" style="color:var(--acc);margin-top:10px">Узнать нашу историю →</button>
+  </div>
   <div class="top"><h1>Каталог</h1><div class="sub">Готовые изделия и материалы — ${P.length} позиций</div></div>
   <div class="promo"><b>Скидка 15%</b>на витринные образцы в наличии · принимаем заявки от организаций (тендеры) — звоните</div>
   <input type="text" placeholder="Поиск по каталогу…" id="sq" value="${q}" style="margin-bottom:12px">
@@ -96,6 +104,49 @@ function cat_(){
 
 /* ---------- работы (используем strip()/works_() из data.js) ---------- */
 function worksView(){return works_()}
+
+/* ---------- о нас ---------- */
+function aboutView(){
+  const phIdx=[1,6,9].filter(i=>G[i]);
+  return `
+  <div class="about-hero">
+    <div class="crown">♛</div>
+    <h1>ИМПЕРИЯ КАМНЯ</h1>
+    <div class="goldbar"><span class="n"></span><span class="w"></span><span class="n"></span></div>
+    <div class="tag">Семейные традиции, проверенные временем</div>
+    <p class="sub2" style="max-width:480px;margin:10px auto 0">Работаем с гранитом и мрамором в Тамбове — памятники, лестницы, кухни и камины, которые остаются в семье на поколения.</p>
+  </div>
+
+  <div class="box">
+    <div class="cab-sec" style="margin:0 0 8px">Наша история</div>
+    <p style="margin:0 0 10px;line-height:1.55">Империя камня — семейное дело: от выбора плиты в карьере до монтажа на объекте всё проходит через одну команду, которая давно работает вместе и помнит в лицо каждого клиента. Для нас гранит и мрамор — не просто материал, а вещь, которая останется в доме на поколения, поэтому мы и называем свои традиции семейными: одно и то же качество от заказа к заказу и слово, которое мы держим.</p>
+    <p style="margin:0;line-height:1.55;color:var(--mute)">Сегодня у нас два салона в Тамбове, свой цех обработки камня и сотни изделий — от памятников и ступеней до кухонных столешниц и каминов — уже стоящих в домах наших заказчиков.</p>
+  </div>
+
+  <div class="cab-sec" style="margin-top:18px">Путь компании</div>
+  <div class="timeline">
+    <div class="tl-item"><b>Семейное начало</b>Небольшая мастерская и простое правило: камень должен служить долго, а цена — быть честной.</div>
+    <div class="tl-item"><b>Свой цех обработки камня</b>Перестали зависеть от подрядчиков — теперь весь цикл, от распила до полировки, под нашим контролем.</div>
+    <div class="tl-item"><b>Два салона в Тамбове</b>ул. Бастионная, 29 и ул. Мичуринская, 275 — чтобы к нам было удобно приехать из любой части города.</div>
+    <div class="tl-item"><b>Сотни семей</b>Памятники, лестницы, кухни и камины — для тех, кто выбрал камень на поколения вперёд.</div>
+  </div>
+
+  <div class="cab-sec" style="margin-top:4px">Почему нам доверяют</div>
+  <div class="vals">
+    <div class="val"><div class="ic">💎</div><b>Отбор камня</b><span>Берём плиту сами и отбраковываем всё, что ниже нашей планки</span></div>
+    <div class="val"><div class="ic">🛡️</div><b>Гарантия до 30 лет</b><span>На изделия из гранита и мрамора — камень, который не подведёт</span></div>
+    <div class="val"><div class="ic">🤝</div><b>Честная цена</b><span>Расчёт по факту размера и материала, без скрытых наценок</span></div>
+    <div class="val"><div class="ic">👪</div><b>Личный подход</b><span>Одна семья работает с другой — помним каждого клиента в лицо</span></div>
+  </div>
+
+  ${phIdx.length?`<div class="about-photos">${phIdx.map(i=>`<img src="${G[i].s}" data-o="${i}" alt="${G[i].t}" loading="lazy">`).join('')}</div>`:''}
+
+  <div class="cta-box">
+    <p>Расскажем о камне то, что знаем сами, и поможем подобрать решение под ваш дом</p>
+    <button class="btn" data-go="calc">Рассчитать стоимость</button>
+  </div>
+  `;
+}
 
 /* ---------- калькулятор ---------- */
 function calcView(){
@@ -197,7 +248,14 @@ function footerHtml(){
   return `
   <footer class="sfoot">
     <div class="sfoot-brand"><img class="lg sm" src="${LOGO}" alt=""><span>Империя камня</span></div>
+    <div class="goldbar"><span class="n"></span><span class="w"></span><span class="n"></span></div>
     <div class="sfoot-cols">
+      <div class="sfoot-col">
+        <b>Компания</b>
+        <button class="sfoot-lnk" data-go="about">О нас</button>
+        <button class="sfoot-lnk" data-go="works">Наши работы</button>
+        <button class="sfoot-lnk" data-go="calc">Расчёт стоимости</button>
+      </div>
       <div class="sfoot-col">
         <b>Каталог</b>
         ${CATS.filter(c=>c!=='Все').map(c=>`<button class="sfoot-lnk" data-foot-cat="${c}">${c}</button>`).join('')}
@@ -222,14 +280,16 @@ function render(){
   const tab=curTab();
   $$('.topnav button[data-go]').forEach(b=>b.classList.toggle('on',b.dataset.go===tab));
   const A=$('#app');
-  A.innerHTML = (tab==='cat'?cat_() : tab==='works'?worksView() : tab==='calc'?calcView() : tab==='cart'?cartView() : cabView()) + footerHtml();
+  A.classList.remove('anim');
+  A.innerHTML = (tab==='cat'?cat_() : tab==='works'?worksView() : tab==='about'?aboutView() : tab==='calc'?calcView() : tab==='cart'?cartView() : cabView()) + footerHtml();
+  requestAnimationFrame(()=>A.classList.add('anim'));
   $('#cartDot').hidden = cart.length===0;
   $('#cartDot').textContent = cart.reduce((s,i)=>s+i.qty,0);
   renderTabs(tab);
   bindView(tab);
 }
 function renderTabs(tab){
-  const names={cat:'Каталог',works:'Работы',calc:'Расчёт',cart:'Корзина',cab:'Кабинет'};
+  const names={cat:'Каталог',works:'Работы',about:'О нас',calc:'Расчёт',cart:'Корзина',cab:'Кабинет'};
   $('#tabs').innerHTML = TABS.map(t=>`<button class="tab ${t===tab?'on':''}" data-go="${t}">${names[t]}${t==='cart'&&cart.length?`<span class="dot">${cart.reduce((s,i)=>s+i.qty,0)}</span>`:''}</button>`).join('');
   const i=TABS.indexOf(tab);$('#ind').style.transform=`translateX(${i*100}%)`;
 }
