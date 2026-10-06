@@ -9,7 +9,11 @@ exports.handler = async (event) => {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHAT_ID;
 
+  console.log('TELEGRAM_BOT_TOKEN set:', !!token, 'length:', token ? token.length : 0);
+  console.log('TELEGRAM_CHAT_ID set:', !!chatId, 'value:', chatId);
+
   if (!token || !chatId) {
+    console.log('Missing env vars, aborting');
     return { statusCode: 500, body: 'Telegram не настроен (нет переменных окружения)' };
   }
 
@@ -37,17 +41,20 @@ exports.handler = async (event) => {
   }
 
   try {
+    console.log('Sending to Telegram, chatId:', chatId, 'text:', text);
     const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ chat_id: chatId, text }),
     });
+    const resText = await res.text();
+    console.log('Telegram response status:', res.status, 'body:', resText);
     if (!res.ok) {
-      const errText = await res.text();
-      return { statusCode: 502, body: `Telegram error: ${errText}` };
+      return { statusCode: 502, body: `Telegram error: ${resText}` };
     }
     return { statusCode: 200, body: 'OK' };
   } catch (e) {
+    console.log('Exception while sending:', e.message);
     return { statusCode: 500, body: 'Send failed: ' + e.message };
   }
 };
