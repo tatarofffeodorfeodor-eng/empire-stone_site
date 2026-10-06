@@ -72,7 +72,7 @@ function cat_(){
   ${curCat==='Все'&&!q?strip():''}
   ${list.length?`<div class="grid">${list.map(p=>`
     <div class="p">
-      <div class="st" style="background:radial-gradient(90% 70% at 50% 100%,${M[p.m].v},${M[p.m].c})"><b>${CN[p.m]||''}</b></div>
+      <div class="st" style="background:radial-gradient(90% 70% at 50% 100%,${M[p.m].v},${M[p.m].c})">${p.img?`<img src="${p.img}" alt="${p.n}" loading="lazy" onerror="this.remove()">`:`<b>${CN[p.m]||''}</b>`}</div>
       <div class="pb">
         <div class="pn">${p.n}</div>
         <div class="row"><div class="pr">${RUB(p.p)}</div>${favHtml(p.id)}</div>
