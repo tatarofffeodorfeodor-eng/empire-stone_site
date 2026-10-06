@@ -131,7 +131,8 @@ function cartView(){
     </div>`).join(''):`<div class="empty">Добавьте товары из каталога или расчёта</div>`}
   ${cart.length?`
   <div class="box" style="margin-top:14px"><div class="row"><b>Итого</b><b>${RUB(total)}</b></div></div>
-  <button class="btn" id="checkout">Оформить заказ</button>`:''}
+  <button class="btn" id="checkout">Оформить заказ</button>
+  <button class="lnk danger" id="clearCart" style="display:block;margin:12px auto 0">Очистить корзину</button>`:''}
   `;
 }
 
@@ -158,7 +159,7 @@ function cabView(){
   return `
   <div class="cab-head"><div><div class="who">Личный кабинет</div><div class="phone">+${user.phone}</div></div><button class="lnk danger" id="logout">Выйти</button></div>
 
-  <div class="cab-sec">Мои заказы</div>
+  <div class="cab-sec">Мои заказы${orders.length?`<button class="lnk danger" id="clearOrders">Очистить все</button>`:''}</div>
   ${orders.length?orders.slice().reverse().map(o=>{const[lbl,cls]=statusLabel(o.status);return`
     <div class="ord"><div class="row1"><span class="id">Заказ ${o.id}</span><span class="st ${cls}">${lbl}</span></div>
     <div class="lines">${o.items.map(i=>`${i.n} ×${i.qty}`).join('\n')}</div>
@@ -252,11 +253,18 @@ function bindView(tab){
       cart=[];saveAll();okAnim();confetti();toast('Заказ оформлен!');setTimeout(()=>go('cab'),600);
       sendToTelegram({type:'order',orderId,items,total});
     };
+    if($('#clearCart'))$('#clearCart').onclick=()=>{
+      if(!cart.length)return;
+      if(confirm('Очистить корзину? Все товары будут удалены.')){cart=[];saveAll();toast('Корзина очищена');render()}
+    };
   }
   if(tab==='cab'){
     if($('#goLogin'))$('#goLogin').onclick=()=>go('login');
     if($('#adminLink'))$('#adminLink').onclick=()=>go('admin');
     if($('#logout'))$('#logout').onclick=()=>{user=null;saveAll();render()};
+    if($('#clearOrders'))$('#clearOrders').onclick=()=>{
+      if(confirm('Очистить всю историю заказов? Это действие нельзя отменить.')){orders=[];saveAll();toast('История заказов очищена');render()}
+    };
     if($('#addAddr'))$('#addAddr').onclick=()=>{const a=prompt('Введите адрес:');if(a&&a.trim()){addrs.push(a.trim());saveAll();render()}};
     $$('[data-deladdr]').forEach(b=>b.onclick=()=>{addrs.splice(+b.dataset.deladdr,1);saveAll();render()});
     $$('[data-usecalc]').forEach(b=>b.onclick=()=>{
