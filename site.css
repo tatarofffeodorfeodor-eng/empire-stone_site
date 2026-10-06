@@ -1,5 +1,20 @@
 /* === Site chrome (navbar, login, cabinet) on top of the base app styles === */
 html,body{background:var(--bg)}
+
+/* декоративный фон по бокам на широких экранах — гранитная плита с золотой прожилкой */
+#bgdeco{position:fixed;inset:0;pointer-events:none;
+  background:
+    radial-gradient(900px 700px at -8% -12%,#8c1f2b2e,transparent 62%),
+    radial-gradient(1000px 780px at 108% 114%,#e6c0682c,transparent 60%),
+    repeating-linear-gradient(118deg,transparent 0 148px,#e6c0681a 148px 150px,transparent 150px 296px)}
+#bgdeco::after{content:"";position:absolute;inset:0;background-image:var(--n);opacity:.045}
+@media(prefers-reduced-motion:reduce){.brand::after{display:none}}
+.brand{position:relative}
+.brand::after{content:"";position:absolute;left:0;top:0;width:34px;height:34px;border-radius:50%;
+  background:linear-gradient(115deg,transparent 35%,#fff9 50%,transparent 65%);
+  background-size:260% 260%;background-position:-130% -130%;pointer-events:none;
+  animation:shine 1.7s .5s cubic-bezier(.2,.7,.3,1) 1 both}
+@keyframes shine{to{background-position:130% 130%}}
 .topbar{position:sticky;top:0;z-index:15;background:var(--bar);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
 .topbar-in{max-width:1040px;margin:0 auto;display:flex;align-items:center;gap:18px;padding:10px 18px}
 .brand{display:flex;align-items:center;gap:10px;font:700 15px Unbounded,Manrope;cursor:pointer;flex:none}
@@ -16,6 +31,14 @@ html,body{background:var(--bg)}
   .app{padding-bottom:60px}
   .hero{border-radius:22px;margin:16px auto 6px;max-width:1040px;clip-path:none}
   .grid2{display:grid;grid-template-columns:1.1fr .9fr;gap:22px;align-items:start}
+  .grid{grid-template-columns:repeat(3,1fr);gap:16px}
+  .gal{columns:3;gap:16px}
+  .sfoot-cols{flex-direction:row;gap:40px}
+  .sfoot-col{flex:1}
+}
+@media(min-width:1040px){
+  .grid{grid-template-columns:repeat(4,1fr)}
+  .gal{columns:4}
 }
 @media(max-width:759px){ .cartbtn span:not(.dot){display:none} }
 

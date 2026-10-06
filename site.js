@@ -204,9 +204,8 @@ function footerHtml(){
       </div>
       <div class="sfoot-col">
         <b>Контакты</b>
-        <a href="tel:+74752264040">+7 (4752) 26-40-40</a>
-        <a href="tel:+79012043565">+7 (901) 204-35-65</a>
-        <a href="https://wa.me/79012043565" target="_blank" rel="noopener">WhatsApp</a>
+        <a href="tel:+79204812075">+7 (920) 481-20-75</a>
+        <a href="https://wa.me/79204812075" target="_blank" rel="noopener">WhatsApp</a>
         <a href="https://vk.com/club76623292" target="_blank" rel="noopener">ВКонтакте</a>
       </div>
       <div class="sfoot-col">
@@ -440,9 +439,8 @@ document.body.insertAdjacentHTML('beforeend',`
 <div id="cd">
   <div class="ob">
     <div class="cab-sec" style="margin:0 0 10px">Связаться с нами</div>
-    <a class="cbtn" href="tel:+74752264040">📞 +7 (4752) 26-40-40</a>
-    <a class="cbtn" href="tel:+79012043565">📞 +7 (901) 204-35-65</a>
-    <a class="cbtn" href="https://wa.me/79012043565" target="_blank" rel="noopener">WhatsApp</a>
+    <a class="cbtn" href="tel:+79204812075">📞 +7 (920) 481-20-75</a>
+    <a class="cbtn" href="https://wa.me/79204812075" target="_blank" rel="noopener">WhatsApp</a>
     <a class="cbtn" href="https://vk.com/club76623292" target="_blank" rel="noopener">ВКонтакте</a>
     <div class="addr"><b>ул. Бастионная, 29</b>Ежедневно 8:30–17:30 · <a href="https://yandex.ru/maps/?text=${encodeURIComponent('Тамбов, ул. Бастионная, 29')}" target="_blank" rel="noopener">на карте</a></div>
     <div class="addr"><b>ул. Мичуринская, 275</b>Ежедневно 9:00–18:00 · <a href="https://yandex.ru/maps/?text=${encodeURIComponent('Тамбов, ул. Мичуринская, 275')}" target="_blank" rel="noopener">на карте</a></div>
