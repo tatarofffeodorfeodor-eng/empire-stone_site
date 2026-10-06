@@ -245,8 +245,11 @@ function bindView(tab){
     if($('#checkout'))$('#checkout').onclick=()=>{
       if(!user){toast('Войдите, чтобы оформить заказ');go('cab');return}
       const total=cart.reduce((s,i)=>s+i.p*i.qty,0);
-      orders.push({id:'№'+(orders.length+1001),date:new Date().toLocaleDateString('ru-RU'),items:cart.map(i=>({n:i.n,qty:i.qty})),total,status:'new'});
+      const orderId='№'+(orders.length+1001);
+      const items=cart.map(i=>({n:i.n,qty:i.qty}));
+      orders.push({id:orderId,date:new Date().toLocaleDateString('ru-RU'),items,total,status:'new'});
       cart=[];saveAll();okAnim();confetti();toast('Заказ оформлен!');setTimeout(()=>go('cab'),600);
+      sendToTelegram({type:'order',orderId,items,total});
     };
   }
   if(tab==='cab'){
@@ -408,11 +411,16 @@ $('#cdClose').onclick=()=>$('#cd').classList.remove('on');
 $('#cdCallback').onclick=()=>{$('#cd').classList.remove('on');openCallback()};
 $('#cbModal').onclick=e=>{if(e.target.id==='cbModal')closeCallback()};
 $('#cbClose').onclick=closeCallback;
+function sendToTelegram(payload){
+  fetch('/.netlify/functions/send-lead',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).catch(()=>{});
+}
 $('#cbSend').onclick=()=>{
   const phone=normPhone($('#cbPhone').value);
   if(phone.length<10){toast('Введите номер полностью');return}
-  leads.push({id:uid(),date:new Date().toLocaleDateString('ru-RU'),phone,name:$('#cbName').value.trim()});
+  const name=$('#cbName').value.trim();
+  leads.push({id:uid(),date:new Date().toLocaleDateString('ru-RU'),phone,name});
   saveAll();closeCallback();toast('Заявка отправлена — мы вам перезвоним!');
+  sendToTelegram({type:'callback',phone,name});
   $('#cbPhone').value='';$('#cbName').value='';
 };
 
