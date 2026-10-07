@@ -118,10 +118,24 @@ html,body{background:var(--bg)}
   .lg.sm{transition:box-shadow .3s}
 }
 
-/* === Плавный переход между вкладками === */
-#app.anim{animation:viewIn .45s cubic-bezier(.22,.8,.26,1)}
-@keyframes viewIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
-@media(prefers-reduced-motion:reduce){#app.anim{animation:none}}
+/* === Плавный переход между вкладками (направление — как свайп в Telegram) === */
+#app.anim.dir-f{animation:viewInFwd .42s cubic-bezier(.22,.8,.26,1)}
+#app.anim.dir-b{animation:viewInBack .42s cubic-bezier(.22,.8,.26,1)}
+@keyframes viewInFwd{from{opacity:0;transform:translate3d(22px,8px,0) scale(.99)}to{opacity:1;transform:translate3d(0,0,0) scale(1)}}
+@keyframes viewInBack{from{opacity:0;transform:translate3d(-22px,8px,0) scale(.99)}to{opacity:1;transform:translate3d(0,0,0) scale(1)}}
+@media(prefers-reduced-motion:reduce){#app.anim.dir-f,#app.anim.dir-b{animation:none}}
+
+/* === Нижний таб-бар и верхнее меню — плавнее, как в Telegram === */
+.tab{transition:color .3s ease}
+.tab.on{transition:color .3s ease,transform .35s cubic-bezier(.34,1.56,.64,1);transform:translateY(-1px)}
+.ind{transition:transform .5s cubic-bezier(.22,1.12,.4,1)}
+.topnav button{transition:color .25s ease,background-color .25s ease,transform .15s}
+.topnav button:active{transform:scale(.96)}
+.btn{transition:transform .18s cubic-bezier(.34,1.56,.64,1),opacity .2s,box-shadow .25s}
+.chip,.fvb{transition:transform .18s cubic-bezier(.34,1.56,.64,1),color .25s,border-color .25s,background-color .25s}
+@media(prefers-reduced-motion:reduce){
+  .tab,.tab.on,.ind,.topnav button,.btn,.chip,.fvb{transition:none}
+}
 
 /* === Страница «О нас» === */
 .timeline{position:relative;margin:16px 2px 4px 8px;padding-left:20px;border-left:2px solid var(--line)}

@@ -97,7 +97,7 @@ function routeHash(){
 addEventListener('hashchange',routeHash);
 
 /* ---------- каталог ---------- */
-let curCat='Все',q='';
+let curCat='Все',q='',searchT=null;
 function favHtml(id){return `<button class="fvb ${fav.has(id)?'on':''}" data-fav="${id}">${fav.has(id)?'♥':'♡'}</button>`}
 function cat_(){
   const list=P.filter(p=>(curCat==='Все'||p.c===curCat)&&(!q||p.n.toLowerCase().includes(q.toLowerCase())));
@@ -178,7 +178,7 @@ function aboutView(){
     <div class="val"><div class="ic">👪</div><b>Личный подход</b><span>Одна семья работает с другой — помним каждого клиента в лицо</span></div>
   </div>
 
-  ${phIdx.length?`<div class="about-photos">${phIdx.map(i=>`<img src="${G[i].s}" data-o="${i}" alt="${G[i].t}" loading="lazy">`).join('')}</div>`:''}
+  ${phIdx.length?`<div class="about-photos">${phIdx.map(i=>`<img src="${G[i].s}" data-o="${i}" alt="${G[i].t}" loading="lazy" decoding="async">`).join('')}</div>`:''}
 
   <div class="cta-box">
     <p>Расскажем о камне то, что знаем сами, и поможем подобрать решение под ваш дом</p>
@@ -334,7 +334,7 @@ function cabView(){
 function footerHtml(){
   return `
   <footer class="sfoot">
-    <div class="sfoot-brand"><img class="lg sm" src="${LOGO}" alt=""><span>Империя камня</span></div>
+    <div class="sfoot-brand"><img class="lg sm" src="${LOGO}" alt="" loading="lazy" decoding="async"><span>Империя камня</span></div>
     <div class="goldbar"><span class="n"></span><span class="w"></span><span class="n"></span></div>
     <div class="sfoot-cols">
       <div class="sfoot-col">
@@ -364,6 +364,7 @@ function footerHtml(){
 }
 /* ---------- отрисовка ---------- */
 let lastRenderedTab=null;
+let lastTabIndex=-1;
 function render(){
   const tab=curTab();
   const tabChanged = tab!==lastRenderedTab;
@@ -374,20 +375,33 @@ function render(){
   A.innerHTML = (tab==='cat'?cat_() : tab==='works'?worksView() : tab==='about'?aboutView() : tab==='calc'?calcView() : tab==='cart'?cartView() : cabView()) + footerHtml();
   /* полноэкранная анимация — только при реальной смене вкладки, а не при каждом клике (корзина/избранное) */
   if(tabChanged){
-    A.classList.remove('anim');
-    requestAnimationFrame(()=>A.classList.add('anim'));
+    const newIndex=TABS.indexOf(tab);
+    const dir=(lastTabIndex>=0 && newIndex<lastTabIndex)?'dir-b':'dir-f';
+    lastTabIndex=newIndex<0?lastTabIndex:newIndex;
+    A.classList.remove('anim','dir-f','dir-b');
+    void A.offsetWidth;
+    requestAnimationFrame(()=>A.classList.add('anim',dir));
+    window.scrollTo(0,0);
+    renderTabs(tab);
   } else {
     window.scrollTo(0,prevScroll);
+    updateTabsBadge();
   }
   $('#cartDot').hidden = cart.length===0;
   $('#cartDot').textContent = cart.reduce((s,i)=>s+i.qty,0);
-  renderTabs(tab);
   bindView(tab);
 }
 function renderTabs(tab){
   const names={cat:'Каталог',works:'Работы',about:'О нас',calc:'Расчёт',cart:'Корзина',cab:'Кабинет'};
   $('#tabs').innerHTML = TABS.map(t=>`<button class="tab ${t===tab?'on':''}" data-go="${t}">${names[t]}${t==='cart'&&cart.length?`<span class="dot">${cart.reduce((s,i)=>s+i.qty,0)}</span>`:''}</button>`).join('');
   const i=TABS.indexOf(tab);$('#ind').style.transform=`translateX(${i*100}%)`;
+}
+/* точечное обновление бейджа корзины в нижнем таб-баре — без пересборки всех кнопок (устраняет микро-дёрганье при добавлении в корзину) */
+function updateTabsBadge(){
+  const btn=$('#tabs [data-go="cart"]');
+  if(!btn)return;
+  const n=cart.reduce((s,i)=>s+i.qty,0);
+  btn.innerHTML='Корзина'+(n?`<span class="dot">${n}</span>`:'');
 }
 
 /* короткий "бамп" — снять и тут же вернуть класс, чтобы анимация сыграла заново даже при повторных кликах подряд */
@@ -447,7 +461,11 @@ function bindView(tab){
   $$('[data-lb]').forEach(b=>b.onclick=()=>lb(b.dataset.lb));
 
   if(tab==='cat'){
-    $('#sq').oninput=e=>{q=e.target.value;render();$('#sq').focus();$('#sq').setSelectionRange(q.length,q.length)};
+    $('#sq').oninput=e=>{
+      q=e.target.value;
+      clearTimeout(searchT);
+      searchT=setTimeout(()=>{render();const el=$('#sq');if(el){el.focus();el.setSelectionRange(q.length,q.length)}},140);
+    };
     $$('[data-cat]').forEach(b=>b.onclick=()=>{curCat=b.dataset.cat;render()});
     if($('#openCallback'))$('#openCallback').onclick=openCallback;
     if($('#qSend'))$('#qSend').onclick=()=>{
