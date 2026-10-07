@@ -142,3 +142,14 @@ html,body{background:var(--bg)}
 .about-photos img:hover{transform:scale(1.04)}
 @media(min-width:620px){.about-photos img{height:150px}}
 
+/* === Отклик на кнопки «В корзину» / «♡» — без полного перерисовывания страницы === */
+.btn:active{transform:scale(.96)}
+.fvb.pop{animation:fvPop .42s cubic-bezier(.34,1.56,.64,1)}
+@keyframes fvPop{0%{transform:scale(1)}35%{transform:scale(1.38) rotate(-6deg)}65%{transform:scale(.92)}100%{transform:scale(1)}}
+#cartDot.bump{animation:dotBump .42s cubic-bezier(.34,1.56,.64,1)}
+@keyframes dotBump{0%{transform:scale(1)}40%{transform:scale(1.45)}100%{transform:scale(1)}}
+.flydot{position:fixed;width:14px;height:14px;border-radius:50%;background:var(--acc);
+  box-shadow:0 0 10px 2px #e6c06888;z-index:40;pointer-events:none;
+  transition:transform .48s cubic-bezier(.4,0,.2,1),opacity .48s ease}
+@media(prefers-reduced-motion:reduce){.flydot{display:none}.fvb.pop,#cartDot.bump{animation:none}}
+

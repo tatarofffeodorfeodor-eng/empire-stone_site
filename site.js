@@ -278,13 +278,22 @@ function footerHtml(){
   </footer>`;
 }
 /* ---------- отрисовка ---------- */
+let lastRenderedTab=null;
 function render(){
   const tab=curTab();
+  const tabChanged = tab!==lastRenderedTab;
+  lastRenderedTab=tab;
   $$('.topnav button[data-go]').forEach(b=>b.classList.toggle('on',b.dataset.go===tab));
   const A=$('#app');
-  A.classList.remove('anim');
+  const prevScroll=window.scrollY;
   A.innerHTML = (tab==='cat'?cat_() : tab==='works'?worksView() : tab==='about'?aboutView() : tab==='calc'?calcView() : tab==='cart'?cartView() : cabView()) + footerHtml();
-  requestAnimationFrame(()=>A.classList.add('anim'));
+  /* полноэкранная анимация — только при реальной смене вкладки, а не при каждом клике (корзина/избранное) */
+  if(tabChanged){
+    A.classList.remove('anim');
+    requestAnimationFrame(()=>A.classList.add('anim'));
+  } else {
+    window.scrollTo(0,prevScroll);
+  }
   $('#cartDot').hidden = cart.length===0;
   $('#cartDot').textContent = cart.reduce((s,i)=>s+i.qty,0);
   renderTabs(tab);
@@ -296,24 +305,56 @@ function renderTabs(tab){
   const i=TABS.indexOf(tab);$('#ind').style.transform=`translateX(${i*100}%)`;
 }
 
-function addToCart(id){
+/* короткий "бамп" — снять и тут же вернуть класс, чтобы анимация сыграла заново даже при повторных кликах подряд */
+function bump(el,cls){
+  if(!el)return;
+  el.classList.remove(cls);void el.offsetWidth;el.classList.add(cls);
+  el.addEventListener('animationend',()=>el.classList.remove(cls),{once:true});
+}
+function addToCart(id,btnEl){
   const p=P.find(p=>p.id===id);if(!p)return;
   const row=cart.find(i=>i.id===id);
   if(row)row.qty++;else cart.push({id:p.id,n:p.n,p:p.p,qty:1,m:p.m});
-  saveAll();toast('Добавлено в корзину');render();
+  saveAll();toast('Добавлено в корзину');
+  flyToCart(btnEl);
+  render();
+  bump($('#cartDot'),'bump');
+}
+/* маленькая точка "+1", которая летит от нажатой кнопки к иконке корзины в шапке */
+function flyToCart(fromEl){
+  if(!fromEl)return;
+  const a=fromEl.getBoundingClientRect(),b=$('.cartbtn').getBoundingClientRect();
+  if(!a.width||!b.width)return;
+  const dot=document.createElement('div');
+  dot.className='flydot';
+  dot.style.left=(a.left+a.width/2-7)+'px';
+  dot.style.top=(a.top+a.height/2-7)+'px';
+  document.body.appendChild(dot);
+  requestAnimationFrame(()=>{
+    dot.style.transform=`translate(${b.left+b.width/2-(a.left+a.width/2)}px,${b.top+b.height/2-(a.top+a.height/2)}px) scale(.3)`;
+    dot.style.opacity='0';
+  });
+  setTimeout(()=>dot.remove(),520);
 }
 function addCalcToCart(){
   const r=calc();if(r.s==null)return;
   const name=`${M[cs.m].n}, ${cs.md==='v'?`${cs.l}×${cs.w}×${cs.h} см`:`${cs.l}×${cs.w} см, ${cs.th} см плитка`}${cs.fas?' + фаска':''}`;
   cart.push({id:'calc-'+uid(),n:name,p:r.s,qty:1,m:cs.m});
   saveAll();toast('Расчёт добавлен в корзину');render();
+  bump($('#cartDot'),'bump');
 }
 
 function bindView(tab){
   $$('[data-go]').forEach(b=>b.onclick=()=>go(b.dataset.go));
   $$('[data-foot-cat]').forEach(b=>b.onclick=()=>{curCat=b.dataset.footCat;q='';go('cat')});
-  $$('[data-add]').forEach(b=>b.onclick=()=>addToCart(isNaN(+b.dataset.add)?b.dataset.add:+b.dataset.add));
-  $$('[data-fav]').forEach(b=>b.onclick=()=>{const id=+b.dataset.fav;fav.has(id)?fav.delete(id):fav.set(id,true);saveAll();render()});
+  $$('[data-add]').forEach(b=>b.onclick=()=>addToCart(isNaN(+b.dataset.add)?b.dataset.add:+b.dataset.add,b));
+  $$('[data-fav]').forEach(b=>b.onclick=()=>{
+    const id=+b.dataset.fav;
+    fav.has(id)?fav.delete(id):fav.set(id,true);
+    saveAll();render();
+    /* кнопка пересоздаётся внутри render() — ищем её заново в новом DOM, чтобы анимация сыграла */
+    requestAnimationFrame(()=>bump($(`[data-fav="${id}"]`),'pop'));
+  });
   $$('[data-o]').forEach(el=>el.onclick=()=>{li=+el.dataset.o;showLb()});
   $$('[data-lb]').forEach(b=>b.onclick=()=>lb(b.dataset.lb));
 
