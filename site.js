@@ -403,7 +403,6 @@ function addToCart(id,btnEl){
   saveAll();toast('Добавлено в корзину');
   flyToCart(btnEl);
   render();
-  bump($('#cartDot'),'bump');
 }
 /* маленькая точка "+1", которая летит от нажатой кнопки к иконке корзины в шапке */
 function flyToCart(fromEl){
@@ -412,14 +411,15 @@ function flyToCart(fromEl){
   if(!a.width||!b.width)return;
   const dot=document.createElement('div');
   dot.className='flydot';
+  const dx=(b.left+b.width/2)-(a.left+a.width/2), dy=(b.top+b.height/2)-(a.top+a.height/2);
   dot.style.left=(a.left+a.width/2-7)+'px';
   dot.style.top=(a.top+a.height/2-7)+'px';
+  dot.style.setProperty('--dx',dx+'px');
+  dot.style.setProperty('--dy',dy+'px');
+  dot.style.setProperty('--arc',Math.min(-40,dy*0.4-50)+'px'); // чуть приподнимает траекторию дугой
   document.body.appendChild(dot);
-  requestAnimationFrame(()=>{
-    dot.style.transform=`translate(${b.left+b.width/2-(a.left+a.width/2)}px,${b.top+b.height/2-(a.top+a.height/2)}px) scale(.3)`;
-    dot.style.opacity='0';
-  });
-  setTimeout(()=>dot.remove(),520);
+  dot.addEventListener('animationend',()=>dot.remove(),{once:true});
+  setTimeout(()=>bump($('#cartDot'),'bump'),720); // бейдж подпрыгивает в момент "приземления" точки
 }
 function addCalcToCart(){
   const r=calc();if(r.s==null)return;

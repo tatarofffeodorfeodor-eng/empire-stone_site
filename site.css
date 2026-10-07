@@ -149,8 +149,15 @@ html,body{background:var(--bg)}
 #cartDot.bump{animation:dotBump .42s cubic-bezier(.34,1.56,.64,1)}
 @keyframes dotBump{0%{transform:scale(1)}40%{transform:scale(1.45)}100%{transform:scale(1)}}
 .flydot{position:fixed;width:14px;height:14px;border-radius:50%;background:var(--acc);
-  box-shadow:0 0 10px 2px #e6c06888;z-index:40;pointer-events:none;
-  transition:transform .48s cubic-bezier(.4,0,.2,1),opacity .48s ease}
+  box-shadow:0 0 12px 3px #e6c06899;z-index:40;pointer-events:none;
+  animation:flyArc .78s cubic-bezier(.22,.61,.36,1) forwards}
+@keyframes flyArc{
+  0%{transform:translate(0,0) scale(1);opacity:1}
+  12%{transform:translate(calc(var(--dx)*.08),calc(var(--dy)*.05 + var(--arc)*.3)) scale(1.15);opacity:1}
+  55%{transform:translate(calc(var(--dx)*.55),calc(var(--dy)*.45 + var(--arc))) scale(1);opacity:1}
+  85%{transform:translate(calc(var(--dx)*.9),calc(var(--dy)*.88)) scale(.6);opacity:.9}
+  100%{transform:translate(var(--dx),var(--dy)) scale(.15);opacity:0}
+}
 @media(prefers-reduced-motion:reduce){.flydot{display:none}.fvb.pop,#cartDot.bump{animation:none}}
 
 /* === Калькулятор: блок «Доп. услуги» (details/summary) === */
