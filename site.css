@@ -2,7 +2,7 @@
 html,body{background:var(--bg)}
 
 /* декоративный фон по бокам на широких экранах — гранитная плита с золотой прожилкой */
-#bgdeco{position:fixed;inset:0;pointer-events:none;
+#bgdeco{position:fixed;inset:0;pointer-events:none;contain:strict;
   background:
     radial-gradient(900px 700px at -8% -12%,#8c1f2b2e,transparent 62%),
     radial-gradient(1000px 780px at 108% 114%,#e6c0682c,transparent 60%),
@@ -15,7 +15,7 @@ html,body{background:var(--bg)}
   background-size:260% 260%;background-position:-130% -130%;pointer-events:none;
   animation:shine 1.7s .5s cubic-bezier(.2,.7,.3,1) 1 both}
 @keyframes shine{to{background-position:130% 130%}}
-.topbar{position:sticky;top:0;z-index:15;background:var(--bar);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.topbar{position:sticky;top:0;z-index:15;background:var(--bar);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);contain:layout paint}
 .topbar-in{max-width:1040px;margin:0 auto;display:flex;align-items:center;gap:18px;padding:10px 18px}
 .brand{display:flex;align-items:center;gap:10px;font:700 17px Unbounded,Manrope;cursor:pointer;flex:none;letter-spacing:-.2px}
 .lg.sm{width:40px;height:40px;border-radius:50%;box-shadow:0 0 0 2px var(--acc),0 0 14px #e6c06855}
@@ -167,12 +167,36 @@ html,body{background:var(--bg)}
   animation:flyArc .78s cubic-bezier(.22,.61,.36,1) forwards}
 @keyframes flyArc{
   0%{transform:translate(0,0) scale(1);opacity:1}
-  12%{transform:translate(calc(var(--dx)*.08),calc(var(--dy)*.05 + var(--arc)*.3)) scale(1.15);opacity:1}
-  55%{transform:translate(calc(var(--dx)*.55),calc(var(--dy)*.45 + var(--arc))) scale(1);opacity:1}
-  85%{transform:translate(calc(var(--dx)*.9),calc(var(--dy)*.88)) scale(.6);opacity:.9}
+  15%{transform:translate(calc(var(--dx)*.15),calc(var(--dy)*.15 + var(--arc)*.51)) scale(1.15);opacity:1}
+  50%{transform:translate(calc(var(--dx)*.5),calc(var(--dy)*.5 + var(--arc)*1)) scale(.85);opacity:1}
+  80%{transform:translate(calc(var(--dx)*.8),calc(var(--dy)*.8 + var(--arc)*.64)) scale(.5);opacity:.85}
   100%{transform:translate(var(--dx),var(--dy)) scale(.15);opacity:0}
 }
 @media(prefers-reduced-motion:reduce){.flydot{display:none}.fvb.pop,#cartDot.bump{animation:none}}
+
+/* === «Наши работы» — витрина (masonry-сетка с плавным появлением и наплывом подписи) === */
+.works-hero{margin-bottom:18px}
+.showcase{columns:2;column-gap:14px}
+@media(min-width:760px){.showcase{columns:3}}
+@media(min-width:1040px){.showcase{columns:4}}
+.showcase-item{break-inside:avoid;margin:0 0 14px;position:relative;border-radius:16px;overflow:hidden;cursor:pointer;
+  border:1px solid var(--line);box-shadow:0 10px 26px -14px #000a;
+  opacity:0;transform:translateY(26px);transition:opacity .6s cubic-bezier(.22,.8,.26,1),transform .6s cubic-bezier(.22,.8,.26,1);
+  transition-delay:calc(var(--i,0)*45ms)}
+.showcase-item.is-visible{opacity:1;transform:translateY(0)}
+.showcase-item img{width:100%;display:block;transition:transform .5s cubic-bezier(.22,.8,.26,1)}
+.showcase-item:active img{transform:scale(1.06)}
+@media(hover:hover){.showcase-item:hover img{transform:scale(1.06)}}
+.showcase-item figcaption{position:absolute;left:0;right:0;bottom:0;padding:28px 12px 10px;
+  background:linear-gradient(transparent,#000d 78%);
+  transform:translateY(8px);opacity:.88;transition:transform .35s cubic-bezier(.22,.8,.26,1),opacity .35s}
+.showcase-item figcaption span{display:block;font:700 12.5px/1.35 Manrope;color:#fff;letter-spacing:-.1px}
+@media(hover:hover){.showcase-item:hover figcaption{transform:translateY(0);opacity:1}}
+@media(prefers-reduced-motion:reduce){
+  .showcase-item{opacity:1;transform:none;transition:none}
+  .showcase-item img{transition:none}
+  .showcase-item figcaption{transition:none}
+}
 
 /* === Калькулятор: блок «Доп. услуги» (details/summary) === */
 #svcBox summary{list-style:none}

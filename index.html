@@ -7,8 +7,8 @@
 <meta name="description" content="Памятники, ступени, подоконники, столешницы из гранита и мрамора. Каталог, расчёт стоимости, личный кабинет.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Manrope:wght@400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="site.css">
+<link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/site.css">
 </head>
 <body>
 <div id="bgdeco" aria-hidden="true"></div>
@@ -33,7 +33,28 @@
 <div id="okanim"><svg viewBox="0 0 52 52"><circle class="okc" cx="26" cy="26" r="23"/><path class="okt" d="M14 27l8 8 16-17"/></svg></div>
 <div id="lb"><img id="lbi" alt=""><p id="lbt"></p><div class="nav"><button class="btn" data-lb="p">Назад</button><button class="btn" data-lb="n">Вперёд</button><button class="btn" data-lb="x">Закрыть</button></div></div>
 
-<script src="data.js" defer></script>
-<script src="site.js" defer></script>
+<button id="fab" title="Связаться">☎</button>
+<div id="cd">
+  <div class="ob">
+    <div class="cab-sec" style="margin:0 0 10px">Связаться с нами</div>
+    <a class="cbtn" href="tel:+79204812075">📞 +7 (920) 481-20-75</a>
+    <a class="cbtn" href="https://wa.me/79204812075" target="_blank" rel="noopener">WhatsApp</a>
+    <a class="cbtn" href="https://vk.com/club76623292" target="_blank" rel="noopener">ВКонтакте</a>
+    <div class="addr"><b>ул. Бастионная, 29</b>Ежедневно 8:30–17:30 · <a href="https://yandex.ru/maps/?text=Тамбов%2C%20ул.%20Бастионная%2C%2029" target="_blank" rel="noopener">на карте</a></div>
+    <div class="addr"><b>ул. Мичуринская, 275</b>Ежедневно 9:00–18:00 · <a href="https://yandex.ru/maps/?text=Тамбов%2C%20ул.%20Мичуринская%2C%20275" target="_blank" rel="noopener">на карте</a></div>
+    <button class="btn" id="cdCallback" style="margin-top:10px">Оставить заявку на звонок</button>
+    <button class="btn g2" id="cdClose" style="margin-top:8px">Закрыть</button>
+  </div>
+</div>
+<div id="cbModal" class="ovl"><div class="ob">
+  <div class="cab-sec" style="margin:0 0 10px">Обратный звонок</div>
+  <div class="sub" style="margin-bottom:12px">Оставьте номер — перезвоним в рабочее время (8:30–18:00)</div>
+  <input type="tel" id="cbPhone" placeholder="+7 900 000-00-00">
+  <input type="text" id="cbName" placeholder="Как вас зовут (необязательно)" style="margin-top:8px">
+  <button class="btn" id="cbSend" style="margin-top:12px">Отправить заявку</button>
+  <button class="lnk" id="cbClose" style="display:block;margin:10px auto 0">Закрыть</button>
+</div></div>
+
+<script type="module" src="/src/main.js"></script>
 </body>
 </html>
