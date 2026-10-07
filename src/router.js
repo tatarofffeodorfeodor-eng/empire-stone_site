@@ -100,10 +100,13 @@ export function render() {
   bindCurrentView(tab);
 }
 
+/**
+ * Подсветка активной вкладки — отдельная "пилюля" на каждой кнопке (не общий
+ * ползунок), которая вспыхивает ярче в момент переключения и гаснет до
+ * спокойного состояния — как подсветка вкладок в Telegram.
+ */
 function renderTabBar(tab) {
-  $('#tabs').innerHTML = TABS.map((t) => `<button class="tab ${t === tab ? 'on' : ''}" data-go="${t}">${TAB_LABELS[t]}${t === 'cart' && store.cart.length ? `<span class="dot">${cartItemCount()}</span>` : ''}</button>`).join('');
-  const i = TABS.indexOf(tab);
-  $('#ind').style.transform = `translateX(${i * 100}%)`;
+  $('#tabs').innerHTML = TABS.map((t) => `<button class="tab ${t === tab ? 'on pop' : ''}" data-go="${t}">${TAB_LABELS[t]}${t === 'cart' && store.cart.length ? `<span class="dot">${cartItemCount()}</span>` : ''}</button>`).join('');
 }
 
 /** Точечное обновление бейджа корзины в нижнем таб-баре — без пересборки всех кнопок (устраняет микро-дёрганье при добавлении в корзину). */

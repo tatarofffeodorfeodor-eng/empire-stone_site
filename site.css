@@ -74,8 +74,7 @@ html,body{background:var(--bg)}
 .empty-small{padding:16px;text-align:center;color:var(--mute);font-size:13px;background:var(--card);border:1px dashed var(--line);border-radius:14px}
 .demo-badge{display:inline-block;background:#e6c06822;color:var(--acc);font:700 11px Manrope;padding:5px 10px;border-radius:20px;margin-bottom:12px}
 
-/* 6 нижних вкладок вместо 4 — поправляем ширину и шаг бегунка */
-.ind{width:16.6667%}
+/* 6 нижних вкладок вместо 4 */
 .tab{font-size:10.3px;padding:9px 0 8px;letter-spacing:-.2px}
 
 /* универсальный оверлей (обратный звонок и т.п.) — использует .ob из style.css */
@@ -125,16 +124,25 @@ html,body{background:var(--bg)}
 @keyframes viewInBack{from{opacity:0;transform:translate3d(-22px,8px,0) scale(.99)}to{opacity:1;transform:translate3d(0,0,0) scale(1)}}
 @media(prefers-reduced-motion:reduce){#app.anim.dir-f,#app.anim.dir-b{animation:none}}
 
-/* === Нижний таб-бар и верхнее меню — плавнее, как в Telegram === */
-.tab{transition:color .3s ease}
+/* === Нижний таб-бар — подсветка-«пилюля» на активной вкладке, вспыхивает при переключении (как в Telegram) === */
+.tab{transition:color .3s ease;z-index:0}
+.tab::before{content:"";position:absolute;inset:4px 3px;border-radius:14px;background:var(--acc);
+  opacity:0;transform:scale(.7);z-index:-1;
+  transition:opacity .3s ease,transform .3s cubic-bezier(.34,1.56,.64,1)}
 .tab.on{transition:color .3s ease,transform .35s cubic-bezier(.34,1.56,.64,1);transform:translateY(-1px)}
-.ind{transition:transform .5s cubic-bezier(.22,1.12,.4,1)}
+.tab.on::before{opacity:.16;transform:scale(1)}
+.tab.pop::before{animation:tabPillPop .5s cubic-bezier(.22,.8,.26,1)}
+@keyframes tabPillPop{
+  0%{opacity:0;transform:scale(.6)}
+  35%{opacity:.4;transform:scale(1.1)}
+  100%{opacity:.16;transform:scale(1)}
+}
 .topnav button{transition:color .25s ease,background-color .25s ease,transform .15s}
 .topnav button:active{transform:scale(.96)}
 .btn{transition:transform .18s cubic-bezier(.34,1.56,.64,1),opacity .2s,box-shadow .25s}
 .chip,.fvb{transition:transform .18s cubic-bezier(.34,1.56,.64,1),color .25s,border-color .25s,background-color .25s}
 @media(prefers-reduced-motion:reduce){
-  .tab,.tab.on,.ind,.topnav button,.btn,.chip,.fvb{transition:none}
+  .tab,.tab.on,.tab::before,.tab.pop::before,.topnav button,.btn,.chip,.fvb{transition:none;animation:none}
 }
 
 /* === Страница «О нас» === */
@@ -162,13 +170,29 @@ html,body{background:var(--bg)}
 @keyframes fvPop{0%{transform:scale(1)}35%{transform:scale(1.38) rotate(-6deg)}65%{transform:scale(.92)}100%{transform:scale(1)}}
 #cartDot.bump{animation:dotBump .42s cubic-bezier(.34,1.56,.64,1)}
 @keyframes dotBump{0%{transform:scale(1)}40%{transform:scale(1.45)}100%{transform:scale(1)}}
-.flydot{position:fixed;width:14px;height:14px;border-radius:50%;background:var(--acc);
-  box-shadow:0 0 12px 3px #e6c06899;z-index:40;pointer-events:none;
-  animation:flyArc .78s cubic-bezier(.22,.61,.36,1) forwards}
+.flydot{position:fixed;width:14px;height:14px;border-radius:50%;z-index:40;pointer-events:none;
+  background:radial-gradient(circle at 35% 30%,#fff6dc 0%,var(--acc) 55%,#b9872f 100%);
+  box-shadow:0 0 16px 5px #e6c06888,0 0 3px #fffbe8}
+
+/* Путь через offset-path — настоящая гладкая кривая, без калькулируемых "горбинок" */
+.flydot-path{offset-rotate:0deg;
+  animation-name:flyMotion,flyScale;
+  animation-timing-function:cubic-bezier(.25,.46,.45,.94);
+  animation-fill-mode:forwards}
+@keyframes flyMotion{0%{offset-distance:0%}100%{offset-distance:100%}}
+@keyframes flyScale{
+  0%{transform:scale(1);opacity:1}
+  65%{transform:scale(1.05);opacity:1}
+  100%{transform:scale(.2);opacity:0}
+}
+
+/* Запасной вариант для браузеров без offset-path — та же точная парабола (--arc = 0 в начале и в конце) */
+.flydot-fallback{animation-name:flyArc;
+  animation-timing-function:cubic-bezier(.25,.46,.45,.94);animation-fill-mode:forwards}
 @keyframes flyArc{
   0%{transform:translate(0,0) scale(1);opacity:1}
-  15%{transform:translate(calc(var(--dx)*.15),calc(var(--dy)*.15 + var(--arc)*.51)) scale(1.15);opacity:1}
-  50%{transform:translate(calc(var(--dx)*.5),calc(var(--dy)*.5 + var(--arc)*1)) scale(.85);opacity:1}
+  15%{transform:translate(calc(var(--dx)*.15),calc(var(--dy)*.15 + var(--arc)*.51)) scale(1.1);opacity:1}
+  50%{transform:translate(calc(var(--dx)*.5),calc(var(--dy)*.5 + var(--arc)*1)) scale(1.02);opacity:1}
   80%{transform:translate(calc(var(--dx)*.8),calc(var(--dy)*.8 + var(--arc)*.64)) scale(.5);opacity:.85}
   100%{transform:translate(var(--dx),var(--dy)) scale(.15);opacity:0}
 }
