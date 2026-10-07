@@ -20,13 +20,50 @@ function saveAll(){LS.set('ik_cart',cart);LS.set('ik_fav',[...fav]);LS.set('ik_u
 
 /* ---------- калькулятор (формула — как в Mini App) ---------- */
 let FAS=FAS_RATE; // перезаписываемая копия ставки фаски (FAS_RATE — заводское значение из data.js)
-let cs={md:'v',m:'g',l:80,w:40,h:5,th:2,fas:false};
+let cs={md:'v',m:'g',l:80,w:40,h:5,th:2,fas:false,
+  svc:{holes:0,inscr:0,item:0,burnCandle:false,paint:false,wideFas:false,retouch:'none',delivery:'city',km:0},
+  sill:{len:120,depth:30,corners:1,stone:'granit',install:false,fas:false},
+  table:{diam:100,thick:3}
+};
+let svcOpen=false; // раскрыта ли панель «доп. услуги» в калькуляторе (локальное состояние UI)
+
+function svcFam(){return SVC_FAM[cs.m]||'gran'}
+function svcTotal(){
+  const t=SVC[svcFam()],s=cs.svc;let total=0;
+  total+=(s.holes||0)*t.hole;
+  total+=(s.inscr||0)*t.inscr;
+  total+=(s.item||0)*t.item;
+  if(s.burnCandle)total+=t.burnCandle;
+  if(s.paint)total+=t.paint;
+  if(s.retouch&&s.retouch!=='none')total+=(t.retouch[s.retouch]||0);
+  if(s.delivery==='region')total+=(s.km||0)*t.km;
+  return total;
+}
+function calcSill(){
+  const st=cs.sill;
+  const lenM=(st.len+(st.corners||0)*6)/100,depthM=st.depth/100;
+  const area=lenM*depthM;
+  const limestone=st.stone==='limestone';
+  const rate=limestone?SILL.limestone.price:(st.install?SILL.granit.withInstall:SILL.granit.price);
+  let total=area*rate;
+  if(st.fas)total+=(st.len/100)*SILL.fasPerM;
+  return{a:area,s:total,u:'м²',fas:st.fas?(st.len/100)*SILL.fasPerM:0,svc:0};
+}
+function calcTable(){
+  const t=cs.table;
+  const rM=(t.diam/100)/2,areaM2=Math.PI*rM*rM,circumM=Math.PI*(t.diam/100);
+  const edgeCost=(circumM*10)*(t.thick/10)*TABLE.edgePerDm2;
+  return{a:areaM2,s:areaM2*TABLE.pricePerM2+edgeCost,u:'м²',fas:0,svc:edgeCost};
+}
 function calc(){
-  const per=2*(cs.l+cs.w)/100,fas=cs.fas?per*FAS:0;
-  const a=cs.l*cs.w/10000;
-  if(cs.md==='t'){const r=(TL[cs.m]||{})[cs.th];return{a,s:r?a*r+fas:null,u:'м²',fas}}
+  if(cs.md==='sill')return calcSill();
+  if(cs.md==='table')return calcTable();
+  const fasRate=cs.svc.wideFas?SVC[svcFam()].wideFas:FAS;
+  const per=2*(cs.l+cs.w)/100,fas=cs.fas?per*fasRate:0;
+  const a=cs.l*cs.w/10000,svc=svcTotal();
+  if(cs.md==='t'){const r=(TL[cs.m]||{})[cs.th];return{a,s:r?a*r+fas+svc:null,u:'м²',fas,svc}}
   const v=cs.l*cs.w*cs.h/1e6;
-  return{a:v,s:v*M[cs.m].m+fas,u:'м³',fas};
+  return{a:v,s:v*M[cs.m].m+fas+svc,u:'м³',fas,svc};
 }
 
 /* ---------- тосты / подтверждение ---------- */
@@ -153,12 +190,20 @@ function aboutView(){
 /* ---------- калькулятор ---------- */
 function calcView(){
   const r=calc();
+  const isStone=cs.md==='v'||cs.md==='t';
+  const fam=svcFam(),t=SVC[fam];
   return `
   <div class="top"><h1>Расчёт стоимости</h1><div class="sub">Прикидочная цена, точную скажет мастер при замере</div></div>
   <div class="box">
     <label>Тип расчёта</label>
-    <div class="seg"><button data-md="v" class="${cs.md==='v'?'on':''}">Объём (м³)</button><button data-md="t" class="${cs.md==='t'?'on':''}">Плитка (м²)</button></div>
-    <label>Камень</label>
+    <div class="seg" style="flex-wrap:wrap;row-gap:4px">
+      <button data-md="v" class="${cs.md==='v'?'on':''}">Объём (м³)</button>
+      <button data-md="t" class="${cs.md==='t'?'on':''}">Плитка (м²)</button>
+      <button data-md="sill" class="${cs.md==='sill'?'on':''}">Подоконник</button>
+      <button data-md="table" class="${cs.md==='table'?'on':''}">Стол круглый</button>
+    </div>
+    ${isStone?`
+    <label style="margin-top:10px">Камень</label>
     <select id="ms">${Object.entries(M).map(([k,v])=>`<option value="${k}" ${k===cs.m?'selected':''}>${v.n}</option>`).join('')}</select>
     <div class="row" style="gap:10px;margin-top:14px">
       <div style="flex:1"><label>Длина, см</label><input type="text" inputmode="numeric" id="cl" value="${cs.l}"></div>
@@ -166,12 +211,52 @@ function calcView(){
     </div>
     ${cs.md==='v'?`<label>Высота, см</label><input type="text" inputmode="numeric" id="ch" value="${cs.h}">`:
       `<label>Толщина плитки</label><div class="seg"><button data-th="2" class="${cs.th==2?'on':''}">2 см</button><button data-th="3" class="${cs.th==3?'on':''}">3 см</button></div>`}
-    <label class="chk" style="margin-top:14px"><input type="checkbox" id="cf" ${cs.fas?'checked':''}> Фаска по периметру (+${FAS} ₽/пог.м)</label>
+    <label class="chk" style="margin-top:14px"><input type="checkbox" id="cf" ${cs.fas?'checked':''}> Фаска по периметру (+${cs.svc.wideFas?t.wideFas:FAS} ₽/пог.м)</label>
+    <label class="chk"><input type="checkbox" id="cWideFas" ${cs.svc.wideFas?'checked':''}> Огранка — фаска от 5мм (${t.wideFas} ₽/пог.м вместо обычной)</label>
+    ` : cs.md==='sill' ? `
+    <div class="row" style="gap:10px;margin-top:10px">
+      <div style="flex:1"><label>Длина, см</label><input type="text" inputmode="numeric" id="sl" value="${cs.sill.len}"></div>
+      <div style="flex:1"><label>Ширина (вынос), см</label><input type="text" inputmode="numeric" id="sd" value="${cs.sill.depth}"></div>
+    </div>
+    <label>Заходы на стену (углы)</label>
+    <div class="seg"><button data-sc="0" class="${cs.sill.corners===0?'on':''}">0</button><button data-sc="1" class="${cs.sill.corners===1?'on':''}">1</button><button data-sc="2" class="${cs.sill.corners===2?'on':''}">2</button></div>
+    <label>Материал</label>
+    <div class="seg"><button data-ss="granit" class="${cs.sill.stone==='granit'?'on':''}">Гранит/мрамор</button><button data-ss="limestone" class="${cs.sill.stone==='limestone'?'on':''}">Мрамориз. известняк</button></div>
+    ${cs.sill.stone==='granit'?`<label class="chk" style="margin-top:12px"><input type="checkbox" id="sInstall" ${cs.sill.install?'checked':''}> С установкой (${RUB(SILL.granit.withInstall)}/м² вместо ${RUB(SILL.granit.price)}/м²)</label>`:`<div class="note">Цена известняка — без установки</div>`}
+    <label class="chk"><input type="checkbox" id="sFas" ${cs.sill.fas?'checked':''}> Фаска по переднему краю (+${RUB(SILL.fasPerM)}/пог.м)</label>
+    ` : `
+    <div class="row" style="gap:10px;margin-top:10px">
+      <div style="flex:1"><label>Диаметр столешницы, см</label><input type="text" inputmode="numeric" id="td" value="${cs.table.diam}"></div>
+      <div style="flex:1"><label>Толщина, см</label><input type="text" inputmode="numeric" id="tt" value="${cs.table.thick}"></div>
+    </div>
+    <div class="note">Высота стола — стандартно 83 см. Цена плиты ${RUB(TABLE.pricePerM2)}/м² + резка торца по площади кромки.</div>
+    `}
   </div>
+
+  ${isStone?`
+  <details class="box" ${svcOpen?'open':''} id="svcBox">
+    <summary style="cursor:pointer;font:700 14px Unbounded,Manrope">Доп. услуги (по желанию)${svcTotal()?` · +${RUB(svcTotal())}`:''}</summary>
+    <div style="margin-top:12px">
+      <div class="row" style="gap:10px">
+        <div style="flex:1"><label>Отверстия, шт (${t.hole} ₽/шт)</label><input type="text" inputmode="numeric" id="svHoles" value="${cs.svc.holes}"></div>
+        <div style="flex:1"><label>Надпись, символов (${t.inscr} ₽/симв.)</label><input type="text" inputmode="numeric" id="svInscr" value="${cs.svc.inscr}"></div>
+      </div>
+      <label>Крест / свеча / цветок, позиций (${t.item} ₽/шт)</label>
+      <input type="text" inputmode="numeric" id="svItem" value="${cs.svc.item}">
+      <label>Ретушь / гравировка портрета</label>
+      <select id="svRetouch">${Object.entries(t.retouch).map(([k])=>`<option value="${k}" ${cs.svc.retouch===k?'selected':''}>${RETOUCH_N[k]}${t.retouch[k]?' — '+RUB(t.retouch[k]):''}</option>`).join('')}</select>
+      <label class="chk" style="margin-top:10px"><input type="checkbox" id="svCandle" ${cs.svc.burnCandle?'checked':''}> Горящая свеча + розы/гвоздики (+${RUB(t.burnCandle)})</label>
+      <label class="chk"><input type="checkbox" id="svPaint" ${cs.svc.paint?'checked':''}> Покраска гравировки + «Антидождь» (+${RUB(t.paint)})</label>
+      <label>Доставка</label>
+      <div class="seg"><button data-sv-del="city" class="${cs.svc.delivery==='city'?'on':''}">По городу — бесплатно</button><button data-sv-del="region" class="${cs.svc.delivery==='region'?'on':''}">В область</button></div>
+      ${cs.svc.delivery==='region'?`<label>Расстояние, км (${t.km} ₽/км в обе стороны)</label><input type="text" inputmode="numeric" id="svKm" value="${cs.svc.km}">`:''}
+    </div>
+  </details>`:''}
+
   <div class="res">
     <small>Ориентировочная стоимость</small>
     <div class="big">${r.s!=null?RUB(r.s):'—'}</div>
-    <small>${r.a.toFixed(2)} ${r.u}${r.fas?` · фаска ${RUB(r.fas)}`:''}</small>
+    <small>${r.a.toFixed(2)} ${r.u}${r.fas?` · фаска ${RUB(r.fas)}`:''}${r.svc?` · услуги ${RUB(r.svc)}`:''}</small>
   </div>
   ${r.s!=null?`<button class="btn" id="calcAdd">Добавить в корзину</button>
   <button class="btn g2" id="calcSave" style="margin-top:8px">Сохранить расчёт в кабинет</button>`:
@@ -338,8 +423,11 @@ function flyToCart(fromEl){
 }
 function addCalcToCart(){
   const r=calc();if(r.s==null)return;
-  const name=`${M[cs.m].n}, ${cs.md==='v'?`${cs.l}×${cs.w}×${cs.h} см`:`${cs.l}×${cs.w} см, ${cs.th} см плитка`}${cs.fas?' + фаска':''}`;
-  cart.push({id:'calc-'+uid(),n:name,p:r.s,qty:1,m:cs.m});
+  let name;
+  if(cs.md==='sill')name=`Подоконник ${cs.sill.len}×${cs.sill.depth} см${cs.sill.stone==='limestone'?', мраморизованный известняк':''}`;
+  else if(cs.md==='table')name=`Стол круглый, Ø${cs.table.diam} см`;
+  else name=`${M[cs.m].n}, ${cs.md==='v'?`${cs.l}×${cs.w}×${cs.h} см`:`${cs.l}×${cs.w} см, ${cs.th} см плитка`}${cs.fas?' + фаска':''}`;
+  cart.push({id:'calc-'+uid(),n:name,p:r.s,qty:1,m:(cs.md==='sill'||cs.md==='table')?null:cs.m});
   saveAll();toast('Расчёт добавлен в корзину');render();
   bump($('#cartDot'),'bump');
 }
@@ -376,11 +464,36 @@ function bindView(tab){
   if(tab==='calc'){
     $$('[data-md]').forEach(b=>b.onclick=()=>{cs.md=b.dataset.md;render()});
     $$('[data-th]').forEach(b=>b.onclick=()=>{cs.th=+b.dataset.th;render()});
-    $('#ms').onchange=e=>{cs.m=e.target.value;render()};
-    $('#cl').oninput=e=>{cs.l=+e.target.value||0;render()};
-    $('#cw').oninput=e=>{cs.w=+e.target.value||0;render()};
+    if($('#ms'))$('#ms').onchange=e=>{cs.m=e.target.value;render()};
+    if($('#cl'))$('#cl').oninput=e=>{cs.l=+e.target.value||0;render()};
+    if($('#cw'))$('#cw').oninput=e=>{cs.w=+e.target.value||0;render()};
     if($('#ch'))$('#ch').oninput=e=>{cs.h=+e.target.value||0;render()};
-    $('#cf').onchange=e=>{cs.fas=e.target.checked;render()};
+    if($('#cf'))$('#cf').onchange=e=>{cs.fas=e.target.checked;render()};
+    if($('#cWideFas'))$('#cWideFas').onchange=e=>{cs.svc.wideFas=e.target.checked;render()};
+
+    /* подоконник */
+    if($('#sl'))$('#sl').oninput=e=>{cs.sill.len=+e.target.value||0;render()};
+    if($('#sd'))$('#sd').oninput=e=>{cs.sill.depth=+e.target.value||0;render()};
+    $$('[data-sc]').forEach(b=>b.onclick=()=>{cs.sill.corners=+b.dataset.sc;render()});
+    $$('[data-ss]').forEach(b=>b.onclick=()=>{cs.sill.stone=b.dataset.ss;render()});
+    if($('#sInstall'))$('#sInstall').onchange=e=>{cs.sill.install=e.target.checked;render()};
+    if($('#sFas'))$('#sFas').onchange=e=>{cs.sill.fas=e.target.checked;render()};
+
+    /* круглый стол */
+    if($('#td'))$('#td').oninput=e=>{cs.table.diam=+e.target.value||0;render()};
+    if($('#tt'))$('#tt').oninput=e=>{cs.table.thick=+e.target.value||0;render()};
+
+    /* доп. услуги */
+    if($('#svcBox'))$('#svcBox').addEventListener('toggle',e=>{svcOpen=e.target.open});
+    if($('#svHoles'))$('#svHoles').oninput=e=>{cs.svc.holes=+e.target.value||0;render()};
+    if($('#svInscr'))$('#svInscr').oninput=e=>{cs.svc.inscr=+e.target.value||0;render()};
+    if($('#svItem'))$('#svItem').oninput=e=>{cs.svc.item=+e.target.value||0;render()};
+    if($('#svRetouch'))$('#svRetouch').onchange=e=>{cs.svc.retouch=e.target.value;render()};
+    if($('#svCandle'))$('#svCandle').onchange=e=>{cs.svc.burnCandle=e.target.checked;render()};
+    if($('#svPaint'))$('#svPaint').onchange=e=>{cs.svc.paint=e.target.checked;render()};
+    $$('[data-sv-del]').forEach(b=>b.onclick=()=>{cs.svc.delivery=b.dataset.svDel;svcOpen=true;render()});
+    if($('#svKm'))$('#svKm').oninput=e=>{cs.svc.km=+e.target.value||0;render()};
+
     if($('#calcAdd'))$('#calcAdd').onclick=addCalcToCart;
     if($('#calcSave'))$('#calcSave').onclick=()=>{
       const r=calc();savedCalc.push({id:uid(),date:new Date().toLocaleDateString('ru-RU'),result:r.s,...cs});saveAll();

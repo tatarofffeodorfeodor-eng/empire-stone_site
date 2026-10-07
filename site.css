@@ -153,3 +153,9 @@ html,body{background:var(--bg)}
   transition:transform .48s cubic-bezier(.4,0,.2,1),opacity .48s ease}
 @media(prefers-reduced-motion:reduce){.flydot{display:none}.fvb.pop,#cartDot.bump{animation:none}}
 
+/* === Калькулятор: блок «Доп. услуги» (details/summary) === */
+#svcBox summary{list-style:none}
+#svcBox summary::-webkit-details-marker{display:none}
+#svcBox summary::after{content:"+";float:right;color:var(--acc);font-size:18px;line-height:1}
+#svcBox[open] summary::after{content:"–"}
+
