@@ -170,33 +170,14 @@ html,body{background:var(--bg)}
 @keyframes fvPop{0%{transform:scale(1)}35%{transform:scale(1.38) rotate(-6deg)}65%{transform:scale(.92)}100%{transform:scale(1)}}
 #cartDot.bump{animation:dotBump .42s cubic-bezier(.34,1.56,.64,1)}
 @keyframes dotBump{0%{transform:scale(1)}40%{transform:scale(1.45)}100%{transform:scale(1)}}
+/* Траектория полёта считается покадрово в JS (src/ui/animations.js, flyToCart) через
+   Web Animations API — здесь только внешний вид самой точки. Так путь — ровно одна
+   кривая без наложения CSS-тайминга поверх кейфреймов, которое раньше давало рывки. */
 .flydot{position:fixed;width:14px;height:14px;border-radius:50%;z-index:40;pointer-events:none;
+  will-change:transform,opacity;
   background:radial-gradient(circle at 35% 30%,#fff6dc 0%,var(--acc) 55%,#b9872f 100%);
   box-shadow:0 0 16px 5px #e6c06888,0 0 3px #fffbe8}
-
-/* Путь через offset-path — настоящая гладкая кривая, без калькулируемых "горбинок" */
-.flydot-path{offset-rotate:0deg;
-  animation-name:flyMotion,flyScale;
-  animation-timing-function:cubic-bezier(.25,.46,.45,.94);
-  animation-fill-mode:forwards}
-@keyframes flyMotion{0%{offset-distance:0%}100%{offset-distance:100%}}
-@keyframes flyScale{
-  0%{transform:scale(1);opacity:1}
-  65%{transform:scale(1.05);opacity:1}
-  100%{transform:scale(.2);opacity:0}
-}
-
-/* Запасной вариант для браузеров без offset-path — та же точная парабола (--arc = 0 в начале и в конце) */
-.flydot-fallback{animation-name:flyArc;
-  animation-timing-function:cubic-bezier(.25,.46,.45,.94);animation-fill-mode:forwards}
-@keyframes flyArc{
-  0%{transform:translate(0,0) scale(1);opacity:1}
-  15%{transform:translate(calc(var(--dx)*.15),calc(var(--dy)*.15 + var(--arc)*.51)) scale(1.1);opacity:1}
-  50%{transform:translate(calc(var(--dx)*.5),calc(var(--dy)*.5 + var(--arc)*1)) scale(1.02);opacity:1}
-  80%{transform:translate(calc(var(--dx)*.8),calc(var(--dy)*.8 + var(--arc)*.64)) scale(.5);opacity:.85}
-  100%{transform:translate(var(--dx),var(--dy)) scale(.15);opacity:0}
-}
-@media(prefers-reduced-motion:reduce){.flydot{display:none}.fvb.pop,#cartDot.bump{animation:none}}
+@media(prefers-reduced-motion:reduce){.fvb.pop,#cartDot.bump{animation:none}}
 
 /* === «Наши работы» — витрина (masonry-сетка с плавным появлением и наплывом подписи) === */
 .works-hero{margin-bottom:18px}
