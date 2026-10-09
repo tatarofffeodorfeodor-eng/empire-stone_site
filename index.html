@@ -9,6 +9,11 @@
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Manrope:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/style.css">
 <link rel="stylesheet" href="/site.css">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#e6c068">
+<link rel="icon" href="/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 </head>
 <body>
 <div id="bgdeco" aria-hidden="true"></div>
@@ -22,9 +27,17 @@
       <button data-go="calc">Расчёт</button>
       <button data-go="cab" id="cabNavBtn">Кабинет</button>
     </nav>
+    <button class="iconbtn" id="searchBtn" title="Поиск по сайту">🔍</button>
     <button class="btn cartbtn" data-go="cart">Корзина<span class="dot" id="cartDot" hidden>0</span></button>
   </div>
 </header>
+<div id="searchModal" class="ovl"><div class="ob searchbox">
+  <div class="searchbox-head">
+    <input type="text" id="searchInput" placeholder="Поиск: товары, фото работ, вопросы…">
+    <button class="lnk" id="searchClose">Закрыть</button>
+  </div>
+  <div id="searchResults"></div>
+</div></div>
 
 <div class="app" id="app"></div>
 
@@ -43,6 +56,7 @@
     <div class="addr"><b>ул. Бастионная, 29</b>Ежедневно 8:30–17:30 · <a href="https://yandex.ru/maps/?text=Тамбов%2C%20ул.%20Бастионная%2C%2029" target="_blank" rel="noopener">на карте</a></div>
     <div class="addr"><b>ул. Мичуринская, 275</b>Ежедневно 9:00–18:00 · <a href="https://yandex.ru/maps/?text=Тамбов%2C%20ул.%20Мичуринская%2C%20275" target="_blank" rel="noopener">на карте</a></div>
     <button class="btn" id="cdCallback" style="margin-top:10px">Оставить заявку на звонок</button>
+    <button class="btn g2" id="cdCustom" style="margin-top:8px">Свой проект (с фото/эскизом)</button>
     <button class="btn g2" id="cdClose" style="margin-top:8px">Закрыть</button>
   </div>
 </div>
@@ -54,7 +68,18 @@
   <button class="btn" id="cbSend" style="margin-top:12px">Отправить заявку</button>
   <button class="lnk" id="cbClose" style="display:block;margin:10px auto 0">Закрыть</button>
 </div></div>
+<div id="coModal" class="ovl"><div class="ob">
+  <div class="cab-sec" style="margin:0 0 10px">Свой проект</div>
+  <div class="sub" style="margin-bottom:12px">Опишите, что хотите изготовить — памятник, камин, столешницу по своим размерам. Можно приложить фото или эскиз.</div>
+  <input type="tel" id="coPhone" placeholder="+7 900 000-00-00">
+  <input type="text" id="coName" placeholder="Как вас зовут (необязательно)" style="margin-top:8px">
+  <textarea id="coDesc" placeholder="Что хотите сделать — размеры, материал, пожелания" rows="3" style="margin-top:8px;width:100%;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font:14px Manrope;color:var(--ink);resize:vertical"></textarea>
+  <input type="file" accept="image/*" id="coPhoto" style="margin-top:8px">
+  <button class="btn" id="coSend" style="margin-top:12px">Отправить</button>
+  <button class="lnk" id="coClose" style="display:block;margin:10px auto 0">Закрыть</button>
+</div></div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script type="module" src="/src/main.js"></script>
 </body>
 </html>

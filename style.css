@@ -30,6 +30,8 @@ h1{font-family:Unbounded,Manrope,sans-serif;margin:0}
 .s3{width:88px;height:88px;border-radius:3px}
 .s4{width:112px;height:92px;border-radius:4px}
 .s4:after{content:"";position:absolute;left:24%;right:24%;top:34%;bottom:0;background:#0b0d10;border-radius:3px 3px 0 0}
+.cmpchk{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--mute);padding:8px 10px 0}
+.cmpchk input{margin:0}
 .pb{padding:11px;display:flex;flex-direction:column;gap:7px;flex:1}
 .pn{font-weight:600;font-size:13px;line-height:1.3;flex:1}
 .pr{font:700 15px Unbounded,Manrope}

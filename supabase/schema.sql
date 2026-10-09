@@ -95,6 +95,8 @@ create table if not exists public.gallery (
   src text not null,
   caption text not null default '',
   position int not null default 0,
+  lat double precision, -- координаты объекта для карты на "Наши работы" — необязательны
+  lng double precision,
   created_at timestamptz not null default now()
 );
 
@@ -142,7 +144,8 @@ create table if not exists public.orders (
   phone text not null,
   items jsonb not null default '[]'::jsonb,
   total numeric not null default 0,
-  status text not null default 'new' check (status in ('new', 'work', 'done')),
+  -- Этапы для таймлайна в личном кабинете: принят → подобран камень → гравировка/обработка → готов → выдан/доставлен.
+  status text not null default 'new' check (status in ('new', 'material', 'engraving', 'ready', 'done')),
   created_at timestamptz not null default now()
 );
 
@@ -153,6 +156,82 @@ create policy "orders_insert_all" on public.orders for insert with check (true);
 
 drop policy if exists "orders_admin_all" on public.orders;
 create policy "orders_admin_all" on public.orders for all
+  using (public.is_admin()) with check (public.is_admin());
+
+-- ----------------------------------------------------------------------------
+-- Посетители, вошедшие в кабинет (по телефону) — для вкладки "Пользователи"
+-- в админке: кто заходил, когда первый/последний раз, сколько раз, сколько
+-- суммарно провёл времени на сайте. Пишет это ТОЛЬКО серверная функция
+-- netlify/functions/track-visit.js через service-role ключ — поэтому RLS
+-- включена без единой policy (anon/authenticated доступа не имеют вообще,
+-- даже на чтение: в этой таблице номера телефонов всех клиентов).
+-- telegram_chat_id/telegram_link_token — задел под уведомления в Telegram
+-- (опционально подключается самим клиентом, см. README).
+-- ----------------------------------------------------------------------------
+create table if not exists public.visitors (
+  phone text primary key,
+  first_seen timestamptz not null default now(),
+  last_seen timestamptz not null default now(),
+  visits_count int not null default 1,
+  time_spent_seconds bigint not null default 0,
+  telegram_chat_id text,
+  telegram_link_token text
+);
+
+alter table public.visitors enable row level security;
+
+-- ----------------------------------------------------------------------------
+-- Отзывы клиентов (с фото) — оставляет сам покупатель через форму на сайте
+-- (без логина), админ может их удалить (модерация постфактум); показываются
+-- на "Наши работы" всем посетителям.
+-- ----------------------------------------------------------------------------
+create table if not exists public.reviews (
+  id bigint generated always as identity primary key,
+  author_name text not null,
+  rating int not null default 5 check (rating between 1 and 5),
+  text text not null,
+  photo_url text,
+  created_at timestamptz not null default now()
+);
+
+alter table public.reviews enable row level security;
+
+drop policy if exists "reviews_select_all" on public.reviews;
+create policy "reviews_select_all" on public.reviews for select using (true);
+
+-- Отзыв теперь оставляет сам покупатель через форму на сайте (без логина) —
+-- поэтому insert открыт всем, а не только админу. Админ может редактировать/
+-- удалять (модерация), но публикует отзыв сам посетитель.
+drop policy if exists "reviews_insert_all" on public.reviews;
+create policy "reviews_insert_all" on public.reviews for insert with check (true);
+
+drop policy if exists "reviews_write_admin" on public.reviews;
+drop policy if exists "reviews_admin_update_delete" on public.reviews;
+create policy "reviews_admin_update_delete" on public.reviews for all
+  using (public.is_admin()) with check (public.is_admin());
+
+-- ----------------------------------------------------------------------------
+-- Заявки на индивидуальный проект (фото-эскиз + описание того, что хочет
+-- клиент) — отдельно от обычных заказов каталога, т.к. тут нет ни цены,
+-- ни готового товара, только бриф для менеджера.
+-- ----------------------------------------------------------------------------
+create table if not exists public.custom_orders (
+  id uuid primary key default gen_random_uuid(),
+  phone text not null,
+  name text,
+  description text not null,
+  photo_url text,
+  status text not null default 'new' check (status in ('new', 'in_review', 'done')),
+  created_at timestamptz not null default now()
+);
+
+alter table public.custom_orders enable row level security;
+
+drop policy if exists "custom_orders_insert_all" on public.custom_orders;
+create policy "custom_orders_insert_all" on public.custom_orders for insert with check (true);
+
+drop policy if exists "custom_orders_admin_all" on public.custom_orders;
+create policy "custom_orders_admin_all" on public.custom_orders for all
   using (public.is_admin()) with check (public.is_admin());
 
 -- ----------------------------------------------------------------------------
@@ -218,6 +297,44 @@ create policy "gallery_photos_admin_write" on storage.objects for insert
 drop policy if exists "gallery_photos_admin_delete" on storage.objects;
 create policy "gallery_photos_admin_delete" on storage.objects for delete
   using (bucket_id = 'gallery-photos' and public.is_admin());
+
+-- Фото к отзывам — загружает сам покупатель через форму отзыва (без логина).
+insert into storage.buckets (id, name, public)
+values ('review-photos', 'review-photos', true)
+on conflict (id) do nothing;
+
+drop policy if exists "review_photos_public_read" on storage.objects;
+create policy "review_photos_public_read" on storage.objects for select
+  using (bucket_id = 'review-photos');
+
+drop policy if exists "review_photos_admin_write" on storage.objects;
+drop policy if exists "review_photos_public_insert" on storage.objects;
+create policy "review_photos_public_insert" on storage.objects for insert
+  with check (bucket_id = 'review-photos');
+
+drop policy if exists "review_photos_admin_delete" on storage.objects;
+create policy "review_photos_admin_delete" on storage.objects for delete
+  using (bucket_id = 'review-photos' and public.is_admin());
+
+-- Фото-эскизы к индивидуальным заявкам — загружает сам посетитель (форма
+-- без логина), читает потом только админ по прямой ссылке в панели; бакет
+-- публичный (иначе пришлось бы городить подписанные ссылки), но без
+-- листинга содержимого посторонним — имя файла никто не угадает.
+insert into storage.buckets (id, name, public)
+values ('custom-order-photos', 'custom-order-photos', true)
+on conflict (id) do nothing;
+
+drop policy if exists "custom_order_photos_public_read" on storage.objects;
+create policy "custom_order_photos_public_read" on storage.objects for select
+  using (bucket_id = 'custom-order-photos');
+
+drop policy if exists "custom_order_photos_public_insert" on storage.objects;
+create policy "custom_order_photos_public_insert" on storage.objects for insert
+  with check (bucket_id = 'custom-order-photos');
+
+drop policy if exists "custom_order_photos_admin_delete" on storage.objects;
+create policy "custom_order_photos_admin_delete" on storage.objects for delete
+  using (bucket_id = 'custom-order-photos' and public.is_admin());
 
 -- ============================================================================
 -- Шаг 4 (выполнить ОТДЕЛЬНО, после того как создали пользователя в

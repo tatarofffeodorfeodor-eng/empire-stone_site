@@ -59,12 +59,21 @@ html,body{background:var(--bg)}
 .ord{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:13px 14px;margin-bottom:10px}
 .ord .row1{display:flex;justify-content:space-between;align-items:baseline}
 .ord .id{font-weight:700;font-size:13.5px}
-.ord .st{font:700 11px Manrope;padding:4px 10px;border-radius:20px}
-.st-new{background:#e6c06833;color:var(--acc)}
-.st-work{background:#4a90e233;color:#4a90e2}
-.st-done{background:#2ecc7133;color:#1e9e5a}
 .ord .lines{margin-top:8px;font-size:12.5px;color:var(--mute);white-space:pre-line}
 .ord .tot{margin-top:8px;font:700 14px Unbounded,Manrope}
+
+/* Таймлайн этапов заказа — горизонтальная прокручиваемая цепочка точек с подписями. */
+.ordline{display:flex;align-items:flex-start;gap:0;margin-top:10px;overflow-x:auto;padding-bottom:2px}
+.ordstep{display:flex;flex-direction:column;align-items:center;flex:1;min-width:64px;position:relative}
+.ordstep::before{content:"";position:absolute;top:5px;left:-50%;width:100%;height:2px;background:var(--line);z-index:0}
+.ordstep:first-child::before{display:none}
+.ordstep.done::before{background:var(--acc)}
+.ordstep .dot{width:11px;height:11px;border-radius:50%;background:var(--line);border:2px solid var(--line);z-index:1;transition:background-color .25s,border-color .25s}
+.ordstep.done .dot{background:var(--acc);border-color:var(--acc)}
+.ordstep.current .dot{background:var(--bg);border-color:var(--acc);box-shadow:0 0 0 3px #e6c06833}
+.ordstep .lbl{font-size:10px;color:var(--mute);text-align:center;margin-top:6px;line-height:1.25;max-width:76px}
+.ordstep.done .lbl,.ordstep.current .lbl{color:var(--ink)}
+.ordstep.current .lbl{font-weight:700}
 .calcsav{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:11px 13px;margin-bottom:9px}
 .calcsav .sw{width:40px;height:40px;border-radius:10px;flex:none}
 .calcsav .ri{flex:1;min-width:0}
@@ -164,6 +173,52 @@ html,body{background:var(--bg)}
 .about-photos img:hover{transform:scale(1.04)}
 @media(min-width:620px){.about-photos img{height:150px}}
 
+.process{display:flex;flex-direction:column;gap:10px;margin:14px 0}
+.pstep{display:flex;gap:12px;align-items:flex-start;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.pnum{flex:none;width:28px;height:28px;border-radius:50%;background:var(--acc);color:#1a1108;font:800 13px Unbounded,Manrope;display:flex;align-items:center;justify-content:center}
+.pstep b{display:block;font:700 13.5px Unbounded,Manrope;margin-bottom:3px}
+.pstep span{color:var(--mute);font-size:12.5px;line-height:1.4}
+
+.faq{display:flex;flex-direction:column;gap:8px;margin:14px 0}
+.faq details{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;overflow:hidden}
+.faq summary{cursor:pointer;font:700 13.5px Unbounded,Manrope;list-style:none;display:flex;justify-content:space-between;align-items:center}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";font:800 16px Manrope;color:var(--acc);transition:transform .25s;margin-left:10px}
+.faq details[open] summary::after{transform:rotate(45deg)}
+.faqa{color:var(--mute);font-size:12.5px;line-height:1.5;padding-top:10px}
+
+.stars{display:flex;gap:2px;font-size:15px;color:#4a4034;line-height:1}
+.stars span.on{color:var(--acc)}
+.stars.pick span{cursor:pointer;font-size:22px;transition:transform .15s}
+.stars.pick span:hover{transform:scale(1.15)}
+.revlist{display:flex;flex-direction:column;gap:10px;margin:10px 0 4px}
+.revcard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+.revhead{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.revhead b{font:700 13px Unbounded,Manrope}
+.revcard p{margin:6px 0;font-size:13px;line-height:1.5;color:var(--ink)}
+.revphoto{width:100%;max-height:220px;object-fit:cover;border-radius:10px;margin:6px 0}
+.revdate{color:var(--mute);font-size:11px}
+.revform{background:var(--card);border:1px solid var(--acc);border-radius:14px;padding:14px;margin:10px 0;display:flex;flex-direction:column;gap:10px}
+.revform input[type="text"],.revform textarea{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font:14px Manrope;color:var(--ink);resize:vertical}
+.revform input[type="file"]{font-size:12px;color:var(--mute)}
+.revform-actions{display:flex;gap:10px;align-items:center}
+.rev-err{color:#d8545f;font-size:12px}
+.works-map{width:100%;height:280px;border-radius:14px;overflow:hidden;border:1px solid var(--line);margin:10px 0}
+
+.iconbtn{border:0;background:var(--card);color:var(--ink);width:38px;height:38px;border-radius:50%;font-size:16px;cursor:pointer;flex:none;display:flex;align-items:center;justify-content:center}
+.iconbtn:hover{background:var(--line)}
+.searchbox{width:100%;max-width:560px;max-height:72vh;display:flex;flex-direction:column}
+.searchbox-head{display:flex;gap:10px;align-items:center;margin-bottom:10px}
+.searchbox-head input{flex:1;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font:14px Manrope;color:var(--ink)}
+#searchResults{overflow-y:auto;flex:1}
+.searchresults{display:flex;flex-direction:column;gap:6px}
+.searchrow{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;cursor:pointer}
+.searchrow:hover{border-color:var(--acc)}
+.sr-badge{flex:none;font-size:10px;color:var(--acc);border:1px solid var(--acc);border-radius:6px;padding:2px 6px}
+.sr-main{display:flex;flex-direction:column;gap:2px;min-width:0}
+.sr-main b{font:700 13px Unbounded,Manrope;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sr-main span{color:var(--mute);font-size:11.5px}
+
 /* === Отклик на кнопки «В корзину» / «♡» — без полного перерисовывания страницы === */
 .btn:active{transform:scale(.96)}
 .fvb.pop{animation:fvPop .42s cubic-bezier(.34,1.56,.64,1)}
@@ -209,3 +264,18 @@ html,body{background:var(--bg)}
 #svcBox summary::after{content:"+";float:right;color:var(--acc);font-size:18px;line-height:1}
 #svcBox[open] summary::after{content:"–"}
 
+
+/* === Сравнение товаров (каталог) === */
+.comparebar{position:sticky;bottom:78px;z-index:18;display:flex;align-items:center;justify-content:space-between;gap:10px;
+  background:var(--card);border:1px solid var(--acc);border-radius:16px;padding:10px 12px;margin:14px 0;box-shadow:0 10px 24px -8px #000a}
+.comparebar span{font:700 13px Unbounded,Manrope}
+.cmptable{display:flex;flex-direction:column;gap:0;overflow-x:auto}
+.cmprow{display:grid;grid-template-columns:72px repeat(3,1fr);gap:8px;padding:8px 0;border-bottom:1px solid var(--line);align-items:center}
+.cmprow:last-child{border-bottom:none}
+.cmphead{grid-template-columns:repeat(3,1fr);font-weight:700}
+.cmplabel{font-size:11px;color:var(--mute)}
+.cmpcell{font-size:12.5px;text-align:center}
+.cmpname{font-size:12px;line-height:1.25;font-weight:600}
+
+/* === Фильтры каталога (цена/материал) === */
+#toggleFilters{font-size:12.5px}

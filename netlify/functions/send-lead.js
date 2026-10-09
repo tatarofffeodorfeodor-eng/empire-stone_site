@@ -24,7 +24,7 @@ exports.handler = async (event) => {
     return { statusCode: 400, body: 'Bad JSON' };
   }
 
-  const { type, name, phone, items, total, orderId } = data;
+  const { type, name, phone, items, total, orderId, text: customText } = data;
 
   let text;
   if (type === 'order') {
@@ -33,6 +33,12 @@ exports.handler = async (event) => {
       `🛒 Новый заказ ${orderId || ''}\n` +
       (lines ? lines + '\n' : '') +
       `Сумма: ${total ? total.toLocaleString('ru-RU') + ' ₽' : '—'}`;
+  } else if (type === 'custom_order') {
+    text =
+      `✏️ Свой проект\n` +
+      `Телефон: ${phone || '—'}` +
+      (name ? `\nИмя: ${name}` : '') +
+      (customText ? `\nОписание: ${customText}` : '');
   } else {
     text =
       `📞 Новая заявка на расчёт\n` +

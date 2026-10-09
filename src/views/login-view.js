@@ -1,6 +1,7 @@
 import { $ } from '../ui/dom.js';
 import { toast } from '../ui/toast.js';
 import { store, persist } from '../state/store.js';
+import { trackLogin } from '../lib/visit-tracking.js';
 
 export function normalizePhone(value) {
   return value.replace(/\D/g, '');
@@ -24,6 +25,7 @@ export function bindLoginView({ goTo }) {
     if (value.length < 10) { toast('Введите номер полностью'); return; }
     store.user = { phone: value };
     persist();
+    trackLogin(value);
     toast('Добро пожаловать!');
     goTo('cab');
   };

@@ -50,7 +50,11 @@ export async function loadRemoteData() {
 
     if (galleryRes.data) {
       GALLERY.length = 0;
-      galleryRes.data.forEach((row) => GALLERY.push({ id: row.id, src: row.src, caption: row.caption }));
+      galleryRes.data.forEach((row) => GALLERY.push({
+        id: row.id, src: row.src, caption: row.caption,
+        lat: row.lat != null ? Number(row.lat) : null,
+        lng: row.lng != null ? Number(row.lng) : null,
+      }));
     }
   } catch (err) {
     console.error('[remote] не удалось загрузить данные из Supabase, остаёмся на заводских:', err);
@@ -100,6 +104,13 @@ export async function updateGalleryCaption(id, caption) {
 export async function deleteGalleryPhoto(id) {
   if (!isBackendConfigured) throw new Error('Backend not configured');
   const { error } = await supabase.from('gallery').delete().eq('id', id);
+  if (error) throw error;
+}
+
+/** Координаты объекта — для карты работ (src/views/works-view.js). Пусто = не показывать на карте. */
+export async function updateGalleryLocation(id, lat, lng) {
+  if (!isBackendConfigured) throw new Error('Backend not configured');
+  const { error } = await supabase.from('gallery').update({ lat, lng }).eq('id', id);
   if (error) throw error;
 }
 

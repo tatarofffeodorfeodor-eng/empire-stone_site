@@ -5,11 +5,15 @@ import { store, persist } from '../state/store.js';
 import { calcState } from '../calculator/calculator.js';
 import { fetchOrdersByPhone } from '../lib/cabinet-api.js';
 import { isBackendConfigured } from '../lib/supabase.js';
+import { stopHeartbeat } from '../lib/visit-tracking.js';
+import { ORDER_STAGES, orderStageIndex } from '../data/order-stages.js';
 
-function statusLabel(status) {
-  if (status === 'new') return ['Новый', 'st-new'];
-  if (status === 'work') return ['В работе', 'st-work'];
-  return ['Выполнен', 'st-done'];
+function orderTimelineHtml(status) {
+  const current = orderStageIndex(status);
+  return `<div class="ordline">${ORDER_STAGES.map((s, ix) => `
+    <div class="ordstep ${ix < current ? 'done' : ''} ${ix === current ? 'current' : ''}">
+      <span class="dot"></span><span class="lbl">${s.label}</span>
+    </div>`).join('')}</div>`;
 }
 
 // Заказы покупателя теперь общие (хранятся в Supabase, см. src/lib/cabinet-api.js),
@@ -31,13 +35,11 @@ export function cabinetViewHtml() {
   <div class="cab-head"><div><div class="who">Личный кабинет</div><div class="phone">+${store.user.phone}</div></div><button class="lnk danger" id="logout">Выйти</button></div>
 
   <div class="cab-sec">Мои заказы</div>
-  ${!ordersReady ? `<div class="empty-small">Загрузка заказов…</div>` : orders.length ? orders.map((o) => {
-    const [label, cls] = statusLabel(o.status);
-    return `
-    <div class="ord"><div class="row1"><span class="id">Заказ №${o.order_no}</span><span class="st ${cls}">${label}</span></div>
+  ${!ordersReady ? `<div class="empty-small">Загрузка заказов…</div>` : orders.length ? orders.map((o) => `
+    <div class="ord"><div class="row1"><span class="id">Заказ №${o.order_no}</span></div>
+    ${orderTimelineHtml(o.status)}
     <div class="lines">${(o.items || []).map((i) => `${i.name} ×${i.qty}`).join('\n')}</div>
-    <div class="tot">${formatRub(o.total)} · ${new Date(o.created_at).toLocaleDateString('ru-RU')}</div></div>`;
-  }).join('') : `<div class="empty-small">Заказов пока нет</div>`}
+    <div class="tot">${formatRub(o.total)} · ${new Date(o.created_at).toLocaleDateString('ru-RU')}</div></div>`).join('') : `<div class="empty-small">Заказов пока нет</div>`}
 
   <div class="cab-sec">Сохранённые расчёты</div>
   ${store.savedCalculations.length ? store.savedCalculations.slice().reverse().map((c) => `
@@ -64,7 +66,7 @@ export function bindCabinetView({ rerender, goTo }) {
   const adminLink = $('#adminLink');
   if (adminLink) adminLink.onclick = () => goTo('admin');
   const logout = $('#logout');
-  if (logout) logout.onclick = () => { store.user = null; persist(); rerender(); };
+  if (logout) logout.onclick = () => { stopHeartbeat(); store.user = null; persist(); rerender(); };
 
   // Заказы — общие (Supabase), подгружаем при первом открытии кабинета этим
   // номером телефона или при смене номера; кэш сбрасывается только тогда.

@@ -48,3 +48,25 @@ export async function deleteOrderAdmin(id) {
   const { error } = await supabase.from('orders').delete().eq('id', id);
   if (error) throw error;
 }
+
+/**
+ * Список посетителей для вкладки "Пользователи" в админке. Идёт через
+ * серверную функцию (не прямой supabase.from), потому что таблица visitors
+ * вообще не открыта для клиента через RLS — функция сама проверяет токен
+ * текущей сессии и то, что это действительно админ (см. netlify/functions/visitors-admin.js).
+ */
+export async function fetchVisitorsAdmin() {
+  if (!isBackendConfigured) return [];
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return [];
+  try {
+    const res = await fetch('/.netlify/functions/visitors-admin', {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    if (!res.ok) return [];
+    return await res.json();
+  } catch (e) {
+    console.error('[visitors] fetch failed:', e);
+    return [];
+  }
+}

@@ -7,11 +7,21 @@ import { GALLERY } from './data/gallery.js';
 import { calcState } from './calculator/calculator.js';
 import {
   saveMaterialPrice, saveChamferRate, createProduct, updateProduct, deleteProduct,
-  updateGalleryCaption, deleteGalleryPhoto, addGalleryPhoto,
+  updateGalleryCaption, deleteGalleryPhoto, addGalleryPhoto, updateGalleryLocation,
 } from './data/remote.js';
 import {
   fetchLeadsAdmin, deleteLeadAdmin, fetchOrdersAdmin, updateOrderStatusAdmin, deleteOrderAdmin,
+  fetchVisitorsAdmin,
 } from './lib/leads-orders.js';
+import { ORDER_STAGES } from './data/order-stages.js';
+import { fetchReviewsAdmin, deleteReviewAdmin } from './lib/reviews.js';
+import { fetchCustomOrdersAdmin, updateCustomOrderStatusAdmin, deleteCustomOrderAdmin } from './lib/custom-orders.js';
+
+const CUSTOM_ORDER_STAGES = [
+  { value: 'new', label: 'Новая' },
+  { value: 'in_review', label: 'В работе' },
+  { value: 'done', label: 'Завершена' },
+];
 
 /**
  * Админ-панель. Логин — настоящий (Supabase Auth, email+пароль), а не PIN в
@@ -21,6 +31,18 @@ import {
  */
 let adminOrders = [];
 let adminLeads = [];
+let adminVisitors = [];
+let adminReviews = [];
+let adminCustomOrders = [];
+
+function formatDuration(totalSeconds) {
+  const s = Math.max(0, Math.round(totalSeconds || 0));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  if (h > 0) return `${h} ч ${m} мин`;
+  if (m > 0) return `${m} мин`;
+  return `${s} сек`;
+}
 
 async function checkIsAdmin() {
   if (!isBackendConfigured) return false;
@@ -79,12 +101,6 @@ async function renderAdminGate(errorMsg) {
   $('#aPass').addEventListener('keydown', (e) => { if (e.key === 'Enter') submit(); });
 }
 
-function statusLabel(status) {
-  if (status === 'new') return 'Новый';
-  if (status === 'work') return 'В работе';
-  return 'Выполнен';
-}
-
 function adminViewHtml() {
   return `
   <div class="top"><h1>Админ-панель</h1><div class="sub">Правки сразу видят все посетители сайта</div></div>
@@ -98,13 +114,24 @@ function adminViewHtml() {
   <div class="box"><input type="text" inputmode="numeric" id="fasInput" value="${calcState.chamferRate}"></div>
   <button class="btn" id="saveStone">Сохранить цены</button>
 
+  <div class="cab-sec" style="margin-top:26px">Пользователи (${adminVisitors.length})</div>
+  ${adminVisitors.length ? adminVisitors.map((v) => {
+    const vOrders = adminOrders.filter((o) => o.phone === v.phone);
+    const vTotal = vOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
+    return `
+    <div class="lead"><b>+${v.phone}</b>
+      <div class="lines" style="margin-top:4px">
+        Впервые: ${new Date(v.first_seen).toLocaleDateString('ru-RU')} · Последний визит: ${new Date(v.last_seen).toLocaleString('ru-RU')}<br>
+        Визитов: ${v.visits_count} · На сайте: ${formatDuration(v.time_spent_seconds)} · Заказов: ${vOrders.length}${vOrders.length ? ` на ${formatRub(vTotal)}` : ''}
+      </div>
+    </div>`;
+  }).join('') : `<div class="empty-small">Пока никто не заходил в кабинет</div>`}
+
   <div class="cab-sec" style="margin-top:26px">Заказы (${adminOrders.length})</div>
   ${adminOrders.length ? adminOrders.map((o) => `
     <div class="ord"><div class="row1"><span class="id">Заказ №${o.order_no}</span>
       <select data-ordstatus="${o.id}">
-        <option value="new" ${o.status === 'new' ? 'selected' : ''}>Новый</option>
-        <option value="work" ${o.status === 'work' ? 'selected' : ''}>В работе</option>
-        <option value="done" ${o.status === 'done' ? 'selected' : ''}>Выполнен</option>
+        ${ORDER_STAGES.map((s) => `<option value="${s.value}" ${o.status === s.value ? 'selected' : ''}>${s.label}</option>`).join('')}
       </select></div>
     <div class="lines">+${o.phone} · ${(o.items || []).map((i) => `${i.name} ×${i.qty}`).join(', ')}</div>
     <div class="tot">${formatRub(o.total)} · ${new Date(o.created_at).toLocaleDateString('ru-RU')}
@@ -115,6 +142,25 @@ function adminViewHtml() {
   ${adminLeads.length ? adminLeads.map((l) => `
     <div class="lead"><b>+${l.phone}</b>${l.name ? ' · ' + l.name : ''} · ${new Date(l.created_at).toLocaleDateString('ru-RU')}
     <button class="lnk danger" data-leaddel="${l.id}" style="margin-left:8px">Удалить</button></div>`).join('')
+    : `<div class="empty-small">Заявок пока нет</div>`}
+
+  <div class="cab-sec" style="margin-top:26px">Отзывы (${adminReviews.length})</div>
+  ${adminReviews.length ? adminReviews.map((r) => `
+    <div class="lead"><b>${r.author_name}</b> · ${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)} · ${new Date(r.created_at).toLocaleDateString('ru-RU')}
+    <button class="lnk danger" data-revdel="${r.id}" style="margin-left:8px">Удалить</button>
+    <div class="lines" style="margin-top:4px">${r.text}</div>
+    ${r.photo_url ? `<img src="${r.photo_url}" style="width:100%;max-width:220px;border-radius:10px;margin-top:6px">` : ''}</div>`).join('')
+    : `<div class="empty-small">Отзывов пока нет</div>`}
+
+  <div class="cab-sec" style="margin-top:26px">Заявки "Свой проект" (${adminCustomOrders.length})</div>
+  ${adminCustomOrders.length ? adminCustomOrders.map((c) => `
+    <div class="lead"><b>+${c.phone}</b>${c.name ? ' · ' + c.name : ''} · ${new Date(c.created_at).toLocaleDateString('ru-RU')}
+      <select data-costatus="${c.id}" style="margin-left:8px">
+        ${CUSTOM_ORDER_STAGES.map((s) => `<option value="${s.value}" ${c.status === s.value ? 'selected' : ''}>${s.label}</option>`).join('')}
+      </select>
+      <button class="lnk danger" data-codel="${c.id}" style="margin-left:8px">Удалить</button>
+    <div class="lines" style="margin-top:4px">${c.description}</div>
+    ${c.photo_url ? `<img src="${c.photo_url}" style="width:100%;max-width:220px;border-radius:10px;margin-top:6px">` : ''}</div>`).join('')
     : `<div class="empty-small">Заявок пока нет</div>`}
 
   <div class="cab-sec" style="margin-top:26px">Товары каталога (${PRODUCTS.length})</div>
@@ -134,6 +180,11 @@ function adminViewHtml() {
   ${GALLERY.map((g) => `
     <div class="box"><img src="${g.src}" style="width:100%;border-radius:10px;margin-bottom:8px">
     <input type="text" data-gt="${g.id}" value="${g.caption}">
+    <div class="row" style="gap:8px;margin-top:8px">
+      <input type="text" inputmode="decimal" data-glat="${g.id}" placeholder="Широта (lat)" value="${g.lat != null ? g.lat : ''}" style="flex:1;min-width:0">
+      <input type="text" inputmode="decimal" data-glng="${g.id}" placeholder="Долгота (lng)" value="${g.lng != null ? g.lng : ''}" style="flex:1;min-width:0">
+    </div>
+    <div class="empty-small" style="margin:4px 0 0;font-size:11px">Координаты — для карты на странице "Работы". Можно скопировать из Яндекс/Google Карт.</div>
     <button class="lnk danger" data-gdel="${g.id}" style="margin-top:6px">Удалить фото</button></div>`).join('')}
   <label class="btn g2" style="display:block;text-align:center;cursor:pointer">+ Добавить фото<input type="file" accept="image/*" id="addPhoto" style="display:none"></label>
 
@@ -143,7 +194,9 @@ function adminViewHtml() {
 
 async function renderAdmin() {
   $('#app').innerHTML = `<div class="loginwrap"><div class="sub">Загрузка…</div></div>`;
-  [adminOrders, adminLeads] = await Promise.all([fetchOrdersAdmin(), fetchLeadsAdmin()]);
+  [adminOrders, adminLeads, adminVisitors, adminReviews, adminCustomOrders] = await Promise.all([
+    fetchOrdersAdmin(), fetchLeadsAdmin(), fetchVisitorsAdmin(), fetchReviewsAdmin(), fetchCustomOrdersAdmin(),
+  ]);
   $('#app').innerHTML = adminViewHtml();
   bindAdmin();
 }
@@ -180,6 +233,26 @@ function bindAdmin() {
   $$('[data-leaddel]').forEach((b) => {
     b.onclick = async () => {
       try { await deleteLeadAdmin(b.dataset.leaddel); renderAdmin(); } catch (e) { toast('Не удалось удалить'); }
+    };
+  });
+
+  $$('[data-revdel]').forEach((b) => {
+    b.onclick = async () => {
+      if (!confirm('Удалить отзыв?')) return;
+      try { await deleteReviewAdmin(b.dataset.revdel); renderAdmin(); } catch (e) { toast('Не удалось удалить'); }
+    };
+  });
+
+  $$('[data-costatus]').forEach((sel) => {
+    sel.onchange = async () => {
+      try { await updateCustomOrderStatusAdmin(sel.dataset.costatus, sel.value); toast('Статус обновлён'); }
+      catch (e) { toast('Не удалось обновить статус'); }
+    };
+  });
+  $$('[data-codel]').forEach((b) => {
+    b.onclick = async () => {
+      if (!confirm('Удалить заявку?')) return;
+      try { await deleteCustomOrderAdmin(b.dataset.codel); renderAdmin(); } catch (e) { toast('Не удалось удалить'); }
     };
   });
 
@@ -232,6 +305,19 @@ function bindAdmin() {
       const g = GALLERY.find((x) => String(x.id) === i.dataset.gt);
       if (g) g.caption = i.value;
       try { await updateGalleryCaption(i.dataset.gt, i.value); } catch (e) { toast('Не удалось сохранить'); }
+    };
+  });
+  $$('[data-glat],[data-glng]').forEach((i) => {
+    i.onchange = async () => {
+      const id = i.dataset.glat || i.dataset.glng;
+      const g = GALLERY.find((x) => String(x.id) === id);
+      if (!g) return;
+      const latInput = document.querySelector(`[data-glat="${id}"]`);
+      const lngInput = document.querySelector(`[data-glng="${id}"]`);
+      const lat = latInput && latInput.value.trim() !== '' ? +latInput.value : null;
+      const lng = lngInput && lngInput.value.trim() !== '' ? +lngInput.value : null;
+      g.lat = lat; g.lng = lng;
+      try { await updateGalleryLocation(id, lat, lng); } catch (e) { toast('Не удалось сохранить координаты'); }
     };
   });
   $$('[data-gdel]').forEach((b) => {

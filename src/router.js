@@ -135,7 +135,7 @@ function bindCurrentView(tab) {
 
   const rerender = render;
   if (tab === 'cat') bindCatalogView({ sendToTelegram, rerender });
-  if (tab === 'works') bindWorksView();
+  if (tab === 'works') bindWorksView({ rerender });
   if (tab === 'calc') bindCalculatorView({ rerender });
   if (tab === 'cart') bindCartView({ rerender, goTo, sendToTelegram });
   if (tab === 'cab') bindCabinetView({ rerender, goTo });
