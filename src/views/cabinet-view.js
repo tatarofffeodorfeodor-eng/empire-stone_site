@@ -1,9 +1,10 @@
 import { $, $$, formatRub } from '../ui/dom.js';
-import { toast } from '../ui/toast.js';
 import { MATERIALS } from '../data/materials.js';
 import { PRODUCTS } from '../data/product-catalog.js';
 import { store, persist } from '../state/store.js';
 import { calcState } from '../calculator/calculator.js';
+import { fetchOrdersByPhone } from '../lib/cabinet-api.js';
+import { isBackendConfigured } from '../lib/supabase.js';
 
 function statusLabel(status) {
   if (status === 'new') return ['Новый', 'st-new'];
@@ -11,22 +12,31 @@ function statusLabel(status) {
   return ['Выполнен', 'st-done'];
 }
 
+// Заказы покупателя теперь общие (хранятся в Supabase, см. src/lib/cabinet-api.js),
+// поэтому подгружаются асинхронно с сервера — кэшируем на время, пока
+// открыт кабинет этого же номера телефона, и перезапрашиваем при смене.
+let cachedOrders = [];
+let cachedPhone = null;
+let ordersLoading = false;
+
 export function cabinetViewHtml() {
   if (!store.user) {
     return `<div class="cab-locked"><h1>Кабинет</h1><p class="sub">Войдите, чтобы увидеть заказы, расчёты и избранное</p><button class="btn" id="goLogin" style="width:auto">Войти по телефону</button>
     <div style="margin-top:34px"><button class="lnk" id="adminLink" style="font-size:11px;opacity:.5">Панель администратора</button></div></div>`;
   }
   const favoriteProducts = PRODUCTS.filter((p) => store.favorites.has(p.id));
+  const ordersReady = !isBackendConfigured || cachedPhone === store.user.phone;
+  const orders = ordersReady ? cachedOrders : [];
   return `
   <div class="cab-head"><div><div class="who">Личный кабинет</div><div class="phone">+${store.user.phone}</div></div><button class="lnk danger" id="logout">Выйти</button></div>
 
-  <div class="cab-sec">Мои заказы${store.orders.length ? `<button class="lnk danger" id="clearOrders">Очистить все</button>` : ''}</div>
-  ${store.orders.length ? store.orders.slice().reverse().map((o) => {
+  <div class="cab-sec">Мои заказы</div>
+  ${!ordersReady ? `<div class="empty-small">Загрузка заказов…</div>` : orders.length ? orders.map((o) => {
     const [label, cls] = statusLabel(o.status);
     return `
-    <div class="ord"><div class="row1"><span class="id">Заказ ${o.id}</span><span class="st ${cls}">${label}</span></div>
-    <div class="lines">${o.items.map((i) => `${i.name} ×${i.qty}`).join('\n')}</div>
-    <div class="tot">${formatRub(o.total)} · ${o.date}</div></div>`;
+    <div class="ord"><div class="row1"><span class="id">Заказ №${o.order_no}</span><span class="st ${cls}">${label}</span></div>
+    <div class="lines">${(o.items || []).map((i) => `${i.name} ×${i.qty}`).join('\n')}</div>
+    <div class="tot">${formatRub(o.total)} · ${new Date(o.created_at).toLocaleDateString('ru-RU')}</div></div>`;
   }).join('') : `<div class="empty-small">Заказов пока нет</div>`}
 
   <div class="cab-sec">Сохранённые расчёты</div>
@@ -55,17 +65,19 @@ export function bindCabinetView({ rerender, goTo }) {
   if (adminLink) adminLink.onclick = () => goTo('admin');
   const logout = $('#logout');
   if (logout) logout.onclick = () => { store.user = null; persist(); rerender(); };
-  const clearOrders = $('#clearOrders');
-  if (clearOrders) {
-    clearOrders.onclick = () => {
-      if (confirm('Очистить всю историю заказов? Это действие нельзя отменить.')) {
-        store.orders = [];
-        persist();
-        toast('История заказов очищена');
-        rerender();
-      }
-    };
+
+  // Заказы — общие (Supabase), подгружаем при первом открытии кабинета этим
+  // номером телефона или при смене номера; кэш сбрасывается только тогда.
+  if (store.user && isBackendConfigured && cachedPhone !== store.user.phone && !ordersLoading) {
+    ordersLoading = true;
+    fetchOrdersByPhone(store.user.phone).then((orders) => {
+      cachedOrders = orders;
+      cachedPhone = store.user.phone;
+      ordersLoading = false;
+      rerender();
+    });
   }
+
   const addAddr = $('#addAddr');
   if (addAddr) {
     addAddr.onclick = () => {

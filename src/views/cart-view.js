@@ -3,6 +3,7 @@ import { toast, showOkAnimation, confetti } from '../ui/toast.js';
 import { MATERIALS } from '../data/materials.js';
 import { calcState, calculate } from '../calculator/calculator.js';
 import { store, persist, cartTotal } from '../state/store.js';
+import { createOrder } from '../lib/leads-orders.js';
 
 export function cartViewHtml() {
   const total = cartTotal();
@@ -60,16 +61,21 @@ export function bindCartView({ rerender, goTo, sendToTelegram }) {
     checkout.onclick = () => {
       if (!store.user) { toast('Войдите, чтобы оформить заказ'); goTo('cab'); return; }
       const total = cartTotal();
-      const orderId = '№' + (store.orders.length + 1001);
       const items = store.cart.map((i) => ({ name: i.name, qty: i.qty }));
-      store.orders.push({ id: orderId, date: new Date().toLocaleDateString('ru-RU'), items, total, status: 'new' });
+      const tempLabel = '№' + (store.orders.length + 1001);
+      // Мгновенный оптимистичный отклик — не ждём сеть, чтобы не тормозить UI.
+      store.orders.push({ id: tempLabel, date: new Date().toLocaleDateString('ru-RU'), items, total, status: 'new' });
       store.cart = [];
       persist();
       showOkAnimation();
       confetti();
       toast('Заказ оформлен!');
       setTimeout(() => goTo('cab'), 600);
-      sendToTelegram({ type: 'order', orderId, items, total });
+      // Настоящая запись — в общую БД (виден админу с любого устройства и
+      // попадёт в историю покупателя в личном кабинете при следующей загрузке).
+      createOrder({ phone: store.user.phone, items, total })
+        .then((saved) => sendToTelegram({ type: 'order', orderId: saved ? '№' + saved.order_no : tempLabel, items, total }))
+        .catch(() => sendToTelegram({ type: 'order', orderId: tempLabel, items, total }));
     };
   }
   const clearCart = document.querySelector('#clearCart');

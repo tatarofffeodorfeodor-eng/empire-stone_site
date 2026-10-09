@@ -2,6 +2,7 @@ import { $, generateId } from './ui/dom.js';
 import { toast } from './ui/toast.js';
 import { store, persist } from './state/store.js';
 import { normalizePhone } from './views/login-view.js';
+import { createLead } from './lib/leads-orders.js';
 
 function openCallbackForm() { $('#cbModal').classList.add('on'); }
 function closeCallbackForm() { $('#cbModal').classList.remove('on'); }
@@ -30,6 +31,7 @@ export function initContactWidget() {
     persist();
     closeCallbackForm();
     toast('Заявка отправлена — мы вам перезвоним!');
+    createLead({ phone, name }); // пишем в общую БД — админ увидит заявку с любого устройства
     sendToTelegram({ type: 'callback', phone, name });
     $('#cbPhone').value = ''; $('#cbName').value = '';
   };
