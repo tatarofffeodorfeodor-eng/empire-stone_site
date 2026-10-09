@@ -4,7 +4,7 @@
 // запрос действительно от залогиненного админа, а не просто кто угодно,
 // кто нашёл адрес функции. Проверка — тем же способом, что и RLS на сайте:
 // токен клиента → кто это по мнению Supabase Auth → есть ли он в admins.
-exports.handler = async (event) => {
+export const handler = async (event) => {
   if (event.httpMethod !== 'GET') {
     return { statusCode: 405, body: 'Method Not Allowed' };
   }

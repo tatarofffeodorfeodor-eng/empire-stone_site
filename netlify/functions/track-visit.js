@@ -6,7 +6,7 @@
 //
 // event: 'login' — клиент вошёл в кабинет (увеличивает visits_count)
 // event: 'heartbeat' — клиент на сайте, добавляет seconds к time_spent_seconds
-exports.handler = async (event) => {
+export const handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' };
   }

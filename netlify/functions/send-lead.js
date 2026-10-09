@@ -1,7 +1,7 @@
 // Пересылает заявки с сайта в Telegram владельцу.
 // Токен бота и chat ID берутся из переменных окружения Netlify (не из кода!) —
 // заданы в Netlify: Project configuration → Environment variables.
-exports.handler = async (event) => {
+export const handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' };
   }

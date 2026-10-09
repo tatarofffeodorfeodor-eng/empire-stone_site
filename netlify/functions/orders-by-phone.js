@@ -4,7 +4,7 @@
 // на клиенте, через него можно было бы прочитать вообще все таблицы.
 // Токен и URL — из переменных окружения Netlify (Site configuration →
 // Environment variables → SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY).
-exports.handler = async (event) => {
+export const handler = async (event) => {
   if (event.httpMethod !== 'GET') {
     return { statusCode: 405, body: 'Method Not Allowed' };
   }
