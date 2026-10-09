@@ -58,9 +58,25 @@ function viewHtmlFor(tab) {
   return cabinetViewHtml();
 }
 
+/**
+ * Раньше добавление в корзину дёргало полный render() — то есть
+ * пересобирало innerHTML всей текущей вкладки (весь каталог, фильтры,
+ * плашку сравнения) синхронно, в тот же тик, что и запуск летящей точки.
+ * Тяжёлая синхронная перестройка DOM прямо в момент старта WAAPI-анимации
+ * съедала первые кадры на слабых телефонах — отсюда и рывки/срывы
+ * траектории. Каталог никак не зависит от состояния корзины (нет счётчика
+ * "уже в корзине" на карточке), так что обновлять нужно только счётчики —
+ * без единого лишнего innerHTML. Теперь анимации ничто не мешает.
+ */
 function handleAddToCart(productId, buttonEl) {
   addProductToCart(productId, buttonEl, { onAdded: flyToCart });
-  render();
+  refreshCartBadges();
+}
+
+function refreshCartBadges() {
+  $('#cartDot').hidden = store.cart.length === 0;
+  $('#cartDot').textContent = cartItemCount();
+  updateCartBadgeInTabBar();
 }
 
 function afterFavoriteToggle(productId) {
@@ -124,10 +140,17 @@ function bindCurrentView(tab) {
   $$('[data-fav]').forEach((b) => {
     b.onclick = () => {
       const id = +b.dataset.fav;
-      store.favorites.has(id) ? store.favorites.delete(id) : store.favorites.set(id, true);
+      const isFav = store.favorites.has(id) ? (store.favorites.delete(id), false) : (store.favorites.set(id, true), true);
       persist();
-      render();
-      requestAnimationFrame(() => afterFavoriteToggle(id));
+      // Точечное обновление — только иконка сердца у нажатой кнопки, без
+      // перестройки всей сетки товаров (та же причина, что и у корзины:
+      // полный render() на каждый клик насквозь бьёт по плавности соседних
+      // анимаций и просто не нужен — избранное меняет только эту кнопку).
+      $$(`[data-fav="${id}"]`).forEach((btn) => {
+        btn.classList.toggle('on', isFav);
+        btn.textContent = isFav ? '♥' : '♡';
+      });
+      afterFavoriteToggle(id);
     };
   });
   $$('[data-o]').forEach((el) => { el.onclick = () => openLightbox(+el.dataset.o); });

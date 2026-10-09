@@ -203,7 +203,12 @@ html,body{background:var(--bg)}
 .revform input[type="file"]{font-size:12px;color:var(--mute)}
 .revform-actions{display:flex;gap:10px;align-items:center}
 .rev-err{color:#d8545f;font-size:12px}
-.works-map{width:100%;height:280px;border-radius:14px;overflow:hidden;border:1px solid var(--line);margin:10px 0}
+.mapgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
+.mapcard{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.mapcard img{width:100%;height:110px;object-fit:cover;cursor:pointer;display:block}
+.mapcard-body{padding:9px 10px}
+.mapcard-body span{display:block;font-size:11.5px;line-height:1.35;color:var(--ink);margin-bottom:5px;min-height:30px}
+.mapcard-body a{font-size:11px;color:var(--acc);text-decoration:none;font-weight:700}
 
 .iconbtn{border:0;background:var(--card);color:var(--ink);width:38px;height:38px;border-radius:50%;font-size:16px;cursor:pointer;flex:none;display:flex;align-items:center;justify-content:center}
 .iconbtn:hover{background:var(--line)}

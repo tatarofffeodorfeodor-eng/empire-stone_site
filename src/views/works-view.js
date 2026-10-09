@@ -2,7 +2,6 @@ import { $, $$ } from '../ui/dom.js';
 import { GALLERY } from '../data/gallery.js';
 import { isBackendConfigured } from '../lib/supabase.js';
 import { fetchReviews, createReview } from '../lib/reviews.js';
-import { openLightbox } from '../ui/lightbox.js';
 
 // Отзывы — общие (хранятся в Supabase), подгружаются один раз при первом
 // открытии вкладки "Работы" и кэшируются в памяти модуля на время сессии.
@@ -13,7 +12,6 @@ let formOpen = false;
 let formRating = 5;
 let formBusy = false;
 let formError = '';
-let mapInstance = null;
 
 function starsHtml(rating, interactive) {
   return `<div class="stars ${interactive ? 'pick' : ''}">${[1, 2, 3, 4, 5].map((n) => `<span data-star="${n}" class="${n <= rating ? 'on' : ''}">★</span>`).join('')}</div>`;
@@ -57,10 +55,20 @@ export function worksViewHtml() {
       <figcaption><span>${g.caption}</span></figcaption>
     </figure>`).join('')}</div>
 
-  ${GALLERY.some((g) => g.lat != null && g.lng != null) ? `
-  <div class="cab-sec" style="margin-top:26px">Где мы уже работали</div>
-  <div id="worksMap" class="works-map"></div>
-  ` : ''}
+  ${(() => {
+    const pins = GALLERY.map((g, i) => ({ ...g, i })).filter((g) => g.lat != null && g.lng != null);
+    if (!pins.length) return '';
+    return `
+    <div class="cab-sec" style="margin-top:26px">Где мы уже работали</div>
+    <div class="mapgrid">${pins.map((p) => `
+      <div class="mapcard">
+        <img src="${p.src}" alt="${p.caption}" loading="lazy" decoding="async" data-o="${p.i}">
+        <div class="mapcard-body">
+          <span>${p.caption}</span>
+          <a href="https://yandex.ru/maps/?pt=${p.lng},${p.lat}&z=16&l=map" target="_blank" rel="noopener">Открыть на карте →</a>
+        </div>
+      </div>`).join('')}</div>`;
+  })()}
 
   <div class="cab-sec" style="margin-top:26px">Отзывы покупателей${!formOpen && isBackendConfigured ? `<button class="lnk" id="revOpen">+ Оставить отзыв</button>` : ''}</div>
   ${formOpen ? reviewFormHtml() : ''}
@@ -86,27 +94,6 @@ export function bindWorksView({ rerender } = {}) {
       });
     }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
     items.forEach((el) => observer.observe(el));
-  }
-
-  const mapEl = $('#worksMap');
-  if (mapEl && window.L) {
-    if (mapInstance) { try { mapInstance.remove(); } catch (e) {} mapInstance = null; }
-    const pins = GALLERY.map((g, i) => ({ ...g, i })).filter((g) => g.lat != null && g.lng != null);
-    if (pins.length) {
-      mapInstance = window.L.map('worksMap', { scrollWheelZoom: false });
-      window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap',
-        maxZoom: 18,
-      }).addTo(mapInstance);
-      const bounds = window.L.latLngBounds(pins.map((p) => [p.lat, p.lng]));
-      pins.forEach((p) => {
-        window.L.marker([p.lat, p.lng]).addTo(mapInstance)
-          .bindPopup(p.caption)
-          .on('click', () => openLightbox(p.i));
-      });
-      mapInstance.fitBounds(bounds, { padding: [24, 24], maxZoom: 15 });
-      if (pins.length === 1) mapInstance.setZoom(13);
-    }
   }
 
   if (isBackendConfigured && !reviewsLoaded && !reviewsLoading && rerender) {
